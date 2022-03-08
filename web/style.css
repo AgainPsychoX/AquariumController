@@ -1,218 +1,218 @@
 * {
-    margin: 0;
-    font-family: 'Segoe UI';
-    /* outline: red dashed 1px; */
+	margin: 0;
+	font-family: 'Segoe UI';
+	/* outline: red dashed 1px; */
 }
 
 h1,h2,h3,h4,h5,h6 {
-    font-weight: 500;
-    margin-bottom: 8px;
+	font-weight: 500;
+	margin-bottom: 8px;
 }
 hr {
-    border: 0; 
-    height: 1px; 
-    background: -webkit-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
-    margin: 12px;
-    margin-top: 16px;
+	border: 0; 
+	height: 1px; 
+	background: -webkit-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
+	margin: 12px;
+	margin-top: 16px;
 }
 a {
-    color: DodgerBlue;
-    text-decoration: none;
+	color: DodgerBlue;
+	text-decoration: none;
 }
 a:hover {
-    color: SkyBlue;
+	color: SkyBlue;
 }
 
 
 
 body {
-    background: SkyBlue;
+	background: SkyBlue;
 }
 main {
-    width: 720px;
-    margin: 20px auto;
-    padding: 20px;
-    background: snow;
+	width: 720px;
+	margin: 20px auto;
+	padding: 20px;
+	background: snow;
 
-    position: relative;
+	position: relative;
 }
 
 
 
 .icons {
-    position: absolute;
-    top: 20px;
-    right: 32px;
-    font-size: xx-large;
+	position: absolute;
+	top: 20px;
+	right: 32px;
+	font-size: xx-large;
 }
 
 .status {
-    display: grid;
-    grid-template-columns: 15% 23% 19% 8% 21% 8%;
-    grid-gap: 8px;
-    text-align: end;
+	display: grid;
+	grid-template-columns: 15% 23% 19% 8% 21% 8%;
+	grid-gap: 8px;
+	text-align: end;
 }
 .status output {
-    text-align: start;
-    font-size: large;
+	text-align: start;
+	font-size: large;
 }
 
 label {
-    font-size: small;
+	font-size: small;
 }
 label input[type=checkbox] {
-    vertical-align: middle;
+	vertical-align: middle;
 }
 label.aside {
-    float: right;
-    margin-right: 8px;
+	float: right;
+	margin-right: 8px;
 }
 
 #ping, #rssi {
-    color: gray;
-    margin-right: 16px;
+	color: gray;
+	margin-right: 16px;
 }
 #ping.error {
-    color: FireBrick;
+	color: FireBrick;
 }
 
 #waterLevel, #refillTankLevel {
-    font-size: small;
+	font-size: small;
 }
 
 
 
 .colors {
-    display: grid;
-    /* grid-template-columns: 1fr 8fr 0.5fr; */
-    grid-template-columns: 0.2fr 1.5fr 0.02fr;
-    grid-gap: 8px;
-    text-align: end;
+	display: grid;
+	/* grid-template-columns: 1fr 8fr 0.5fr; */
+	grid-template-columns: 0.2fr 1.5fr 0.02fr;
+	grid-gap: 8px;
+	text-align: end;
 }
 .colors input[type=range] {
-    height: 24px;
-    background: #d3d3d3;
-    outline: none;
-    -webkit-appearance: none;
-    opacity: 0.8;
-    transition: opacity .2s;
+	height: 24px;
+	background: #d3d3d3;
+	outline: none;
+	-webkit-appearance: none;
+	opacity: 0.8;
+	transition: opacity .2s;
 }
 .colors input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
+	-webkit-appearance: none;
+	width: 24px;
+	height: 24px;
+	cursor: pointer;
 }
 .colors input[type=range]:hover {
-    opacity: 1;
+	opacity: 1;
 }
 #red-slider::-webkit-slider-thumb {
-    background: FireBrick;
+	background: FireBrick;
 }
 #green-slider::-webkit-slider-thumb {
-    background: ForestGreen
+	background: ForestGreen
 }
 #blue-slider::-webkit-slider-thumb {
-    background: DodgerBlue;
+	background: DodgerBlue;
 }
 #white-slider::-webkit-slider-thumb {
-    background: GoldenRod;
+	background: GoldenRod;
 }
 .colors input[type=number] {
-    display: inline-block;
-    line-height: 8px;
-    width: 40px;
+	display: inline-block;
+	line-height: 8px;
+	width: 40px;
 }
 
 
 .colors-cycle table {
-    margin: 8px auto;
-    /* table-layout: fixed; */
+	margin: 8px auto;
+	/* table-layout: fixed; */
 }
 .colors-cycle table input[type=time] {
-    display: block;
-    margin: auto;
+	display: block;
+	margin: auto;
 }
 .colors-cycle table input[type=number] {
-    display: block;
-    margin: auto;
-    width: 64px;
-    text-align: end;
+	display: block;
+	margin: auto;
+	width: 64px;
+	text-align: end;
 }
 .colors-cycle table th {
-    font-size: small;
-    font-weight: normal;
+	font-size: small;
+	font-weight: normal;
 }
 
 .colors-cycle table tbody tr:first-of-type:not(.template) td:first-of-type button:first-of-type {
-    visibility: hidden;
+	visibility: hidden;
 }
 
 .colors-cycle .template {
-    display: none;
+	display: none;
 }
 
 
 
 .heating, .circulator, .other {
-    display: flex;
-    justify-content: space-evenly;
+	display: flex;
+	justify-content: space-evenly;
 }
 .heating input[type=number] {
-    width: 50px;
+	width: 50px;
 }
 
 
 
 svg#chart .line {
-    fill: none;
-    stroke-width: 1.5px;
-    stroke: DodgerBlue;
+	fill: none;
+	stroke-width: 1.5px;
+	stroke: DodgerBlue;
 }
 svg#chart .line--airTemperature {
-    stroke: GoldenRod;
+	stroke: GoldenRod;
 }
 svg#chart .line--waterTemperature {
-    stroke: FireBrick;
+	stroke: FireBrick;
 }
 svg#chart .line--phLevel {
-    stroke: ForestGreen;
+	stroke: ForestGreen;
 }
 svg#chart .zoom {
-    cursor: move;
-    fill: none;
-    pointer-events: all;
+	cursor: move;
+	fill: none;
+	pointer-events: all;
 }
 svg#chart .grid line {
-    stroke-width: 1.0px;
-    stroke: gray;
+	stroke-width: 1.0px;
+	stroke: gray;
 }
 svg#chart .tooltip {
-    stroke-width: 2.5px;
-    stroke: none;
+	stroke-width: 2.5px;
+	stroke: none;
 }
 svg#chart .hoverLine {
-    stroke-width: 2.5px;
-    stroke: none;
+	stroke-width: 2.5px;
+	stroke: none;
 }
 svg#chart .hoverLine.show {
-    stroke: gray;
+	stroke: gray;
 }
 svg#chart .tooltip body {
-    height: auto;
-    padding: 8px;
-    background: #87CEEB40;
-    font-size: small;
-    font-weight: bold;
+	height: auto;
+	padding: 8px;
+	background: #87CEEB40;
+	font-size: small;
+	font-weight: bold;
 }
 svg#chart .tooltip .text--airTemperature {
-    color: GoldenRod;
+	color: GoldenRod;
 }
 svg#chart .tooltip .text--waterTemperature {
-    color: FireBrick;
+	color: FireBrick;
 }
 svg#chart .tooltip .text--phLevel {
-    color: ForestGreen;
+	color: ForestGreen;
 }
 
 

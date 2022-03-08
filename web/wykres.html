@@ -1,73 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <style>
+	<meta charset="utf-8">
+	<style>
 html, body {
-    height: 100%;
-    margin: 0;
-    font-family: 'Segoe UI';
+	height: 100%;
+	margin: 0;
+	font-family: 'Segoe UI';
 }
 svg#chart .line {
-    fill: none;
-    stroke-width: 1.5px;
-    stroke: DodgerBlue;
+	fill: none;
+	stroke-width: 1.5px;
+	stroke: DodgerBlue;
 }
 svg#chart .line--airTemperature {
-    stroke: GoldenRod;
+	stroke: GoldenRod;
 }
 svg#chart .line--waterTemperature {
-    stroke: FireBrick;
+	stroke: FireBrick;
 }
 svg#chart .line--phLevel {
-    stroke: ForestGreen;
+	stroke: ForestGreen;
 }
 svg#chart .zoom {
-    cursor: move;
-    fill: none;
-    pointer-events: all;
+	cursor: move;
+	fill: none;
+	pointer-events: all;
 }
 svg#chart .grid line {
-    stroke-width: 1.0px;
-    stroke: gray;
+	stroke-width: 1.0px;
+	stroke: gray;
 }
 svg#chart .tooltip {
-    stroke-width: 2.5px;
-    stroke: none;
+	stroke-width: 2.5px;
+	stroke: none;
 }
 svg#chart .hoverLine {
-    stroke-width: 2.5px;
-    stroke: none;
+	stroke-width: 2.5px;
+	stroke: none;
 }
 svg#chart .hoverLine.show {
-    stroke: gray;
+	stroke: gray;
 }
 svg#chart .tooltip body {
-    height: auto;
-    padding: 8px;
-    background: #87CEEB40;
-    font-size: small;
-    font-weight: bold;
+	height: auto;
+	padding: 8px;
+	background: #87CEEB40;
+	font-size: small;
+	font-weight: bold;
 }
 svg#chart .tooltip .text--airTemperature {
-    color: GoldenRod;
+	color: GoldenRod;
 }
 svg#chart .tooltip .text--waterTemperature {
-    color: FireBrick;
+	color: FireBrick;
 }
 svg#chart .tooltip .text--phLevel {
-    color: ForestGreen;
+	color: ForestGreen;
 }
-    </style>
+	</style>
 </head>
 <body>
-    <svg id="chart" width="100%" height="100%"></svg>
-    <script src="https://d3js.org/d3.v4.min.js" onerror="alert('Nie można załadować wykresu. Brak połączenia z internetem?')" defer></script>
-    <script src="charts.js" defer></script>
-    <script defer>
+	<svg id="chart" width="100%" height="100%"></svg>
+	<script src="https://d3js.org/d3.v4.min.js" onerror="alert('Nie można załadować wykresu. Brak połączenia z internetem?')" defer></script>
+	<script src="charts.js" defer></script>
+	<script defer>
 let chartsUpdateInterval = setInterval(() => {
-    updateChart();
+	updateChart();
 }, 10000);
-    </script>
+	</script>
 </body>
 </html>

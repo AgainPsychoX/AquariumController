@@ -105,27 +105,27 @@ Size: `0x1000` (4kB)
 
 * `0x000` - `0x010`:
 
-    * `0x000` - `0x007` bytes - nothing (8 bytes of nothing at position 0)
-    * `0x008` byte - cloud logging settings (interval in seconds or seconds (MSB set for minutes), up to 127 or 0 if disabled)
-    * `0x009` byte - unused for now
-    * `0x00A` byte - maximum temperature* for heating controller
-    * `0x00B` byte - minimal temperature* for heating controller 
-    * `0x00C` & `0x00D` bytes - circulator active period in seconds
-    * `0x00E` & `0x00F` bytes - circulator pause period in minutes 
+	* `0x000` - `0x007` bytes - nothing (8 bytes of nothing at position 0)
+	* `0x008` byte - cloud logging settings (interval in seconds or seconds (MSB set for minutes), up to 127 or 0 if disabled)
+	* `0x009` byte - unused for now
+	* `0x00A` byte - maximum temperature* for heating controller
+	* `0x00B` byte - minimal temperature* for heating controller 
+	* `0x00C` & `0x00D` bytes - circulator active period in seconds
+	* `0x00E` & `0x00F` bytes - circulator pause period in minutes 
 
 \* - temperatures encoded as `abs(floor(temperature * 100)) / 25`, decoded as `value * 25 / 100`.
 
 * `0x010` - `0x080` - smooth light controller entries
 
-    Entry format: 
-    * 1st byte - hour
-    * 2nd byte - minute
-    * 3rd byte - red light PWM value
-    * 4th byte - green light PWM value
-    * 5th byte - blue light PWM value
-    * 6th byte - while light PWM value
+	Entry format: 
+	* 1st byte - hour
+	* 2nd byte - minute
+	* 3rd byte - red light PWM value
+	* 4th byte - green light PWM value
+	* 5th byte - blue light PWM value
+	* 6th byte - while light PWM value
 
-    It means there are `14` customizable entries.
+	It means there are `14` customizable entries.
 
 #### Cloud logger
 
@@ -138,6 +138,9 @@ There is HTTPS client running every configured interval sending the request with
 ## TODO
 
 + Use SSL sessions (to avoid partially lag of cloud logger).
+	
+	See https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/bearssl-client-secure-class.html?highlight=WiFiClientSecure
+
 + Store Wi-Fi settings (SSID/password) in EEPROM. 
 + Store cloud logger settings in EEPROM.
 + Cloud logger buffer (configurable; in such case charts could get data from status too?).
