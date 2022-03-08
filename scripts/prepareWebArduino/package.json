@@ -1,0 +1,13 @@
+{
+	"name": "preparewebarduino",
+	"description": "Script to prepare static web content for easy including in Arduino project.",
+	"version": "0.6.0",
+	"main": "prepareWebArduino.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "MIT",
+	"homepage": "Created by Patryk 'PsychoX' Ludwikowski <psychoxivi+arduino@gmail.com>"
+}

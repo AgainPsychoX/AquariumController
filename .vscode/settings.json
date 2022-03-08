@@ -1,0 +1,19 @@
+{
+	"cSpell.words": [
+		"datetime",
+		"FPSTR",
+		"HTTPC",
+		"Pinout",
+		"preparewebarduino",
+		"PROGMEM",
+		"RSSI",
+		"snprintf",
+		"ssid"
+	],
+	"files.associations": {
+		"*.log": "vt100",
+		"cstddef": "cpp",
+		"memory": "cpp",
+		"new": "cpp"
+	}
+}

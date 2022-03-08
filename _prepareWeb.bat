@@ -1,0 +1,1 @@
+node .\scripts\prepareWebArduino\prepareWebArduino.js --no-timestamp --no-debug-prints --output-directory src/webEncoded/
