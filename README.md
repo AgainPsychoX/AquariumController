@@ -11,6 +11,7 @@
 + Simple circulator controller (periodical)
 + Water pH (acidity/basicity) meter.
 + Cloud logging of various parameters.
++ Most of UI uses Polish language.
 
 
 
@@ -92,6 +93,17 @@ Hardware consists of:
 
 Web content (`web` directory) is prepared by `prepareWebArduino.js` script into `src/webEncoded` as compressed, allowing easy embedding in web server code with simple macros.
 
+#### Web API
+
+| Request                  | Description                                                                        |
+|--------------------------|------------------------------------------------------------------------------------|
+| `/status`                | Returns JSON with status object.                                                   |
+| `/config` (`?=...`)      | Updates config values (from query params) and/or returns JSON with current config. |
+| `/saveEEPROM`            | Saves any config and persistent data (incl. colors cycles) to EEPROM.              |
+| `/getColorsCycle`        | Returns JSON with colors cycle object.                                             |
+| `/setColorsCycle` (POST) | Updates colors cycle from encoded value send via POST (see sources for details).   |
+| `/resetColorCycle`       | Resets colors cycle to defaults.                                                   |
+
 #### I2C addresses
 
 * `0x26` - Digital IO expander (PCF8574)
@@ -137,27 +149,35 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
++ Chart link/button for last hour/day should show error if no data to show.
++ Add loading/error information for line charts.
++ Store Wi-Fi settings (SSID/password) in EEPROM. 
 + Use SSL sessions (to avoid partially lag of cloud logger).
 	
 	See https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/bearssl-client-secure-class.html?highlight=WiFiClientSecure
 
-+ Store Wi-Fi settings (SSID/password) in EEPROM. 
-+ Store cloud logger settings in EEPROM.
 + Cloud logger buffer (configurable; in such case charts could get data from status too?).
-+ Configurable cloud log interval (and maybe timeout too?).
-+ Sync chart refresh with cloud logger.
-+ Add loading/error information for line charts.
++ Store cloud logger settings in EEPROM (incl. URL and fingerprint).
 + Add security token to cloud communication.
++ Fit colors cycle configuration on mobile nicely, somehow.
++ Elements dosing pumps controller.
+	- C++ (store mili-liters and interval, static calibration).
+	- Web (3 elements = 3 mL + 3 time inputs).
+	- Custom one time dosage button.
++ Circulator force run button.
 + Include electronic board schema in docs.
-+ Water wind controller (nie ma PWM, ale może krótkie pulsy?).
-+ Exportable/importable colour cycle configuration (as JSON?) .
-+ Saving/reading colour cycle presets from browser storage.
-+ Update SSL certs fingerprints.
-+ Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for better `PWM`.
-+ Use `snprintf_P` in place of `snprintf`.
++ Show total running time (from last power-on), under current time at web portal.
++ Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
++ Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
 + Use some macro for logging instead of multiple `#if`?.
++ Use `snprintf_P` in place of `snprintf`.
++ Proper seeding code, incl. WiFi.
 + Add recessiveness to `prepareWebArduino`.
 + Add `--watch` to `prepareWebArduino`.
 + Try overclock ESP into 160 MHz.
-+ Proper seeding code, incl. WiFi.
-+ Working pH meter.
++ Water wind controller (nie ma PWM, ale może krótkie pulsy?).
++ Exportable/importable colour cycle configuration (as JSON/encoded?) .
++ Saving/reading colour cycle presets from browser storage.
++ Auto-update SSL certs fingerprints?
++ EEPROM saved calibration for elements dosing pumps controller.
++ Working pH meter...

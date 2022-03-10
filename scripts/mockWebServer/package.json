@@ -1,0 +1,15 @@
+{
+	"name": "mock-web-server",
+	"version": "0.1.0",
+	"description": "Mock web server for aquarium controller for easier testing.",
+	"author": "Patryk 'PsychoX' Ludwikowski <psychoxivi+arduino@gmail.com>",
+	"license": "MIT",
+	"main": "mockWebServer.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"dependencies": {
+		"body-parser": "^1.19.2",
+		"express": "^4.17.3"
+	}
+}

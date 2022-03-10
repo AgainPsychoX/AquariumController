@@ -1,95 +1,229 @@
-* {
+
+  /***********/
+ /* Globals */
+/***********/
+
+body {
+	/* font-family: 'Roboto', 'Segoe UI', sans-serif; */
+	font-family: 'Segoe UI', sans-serif;
+	font-size: 14px;
+}
+* { 
+	box-sizing: border-box;
 	margin: 0;
-	font-family: 'Segoe UI';
 	/* outline: red dashed 1px; */
 }
 
-h1,h2,h3,h4,h5,h6 {
-	font-weight: 500;
-	margin-bottom: 8px;
-}
-hr {
-	border: 0; 
-	height: 1px; 
-	background: -webkit-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
-	margin: 12px;
-	margin-top: 16px;
-}
 a {
-	color: DodgerBlue;
 	text-decoration: none;
+	color: dodgerblue;
 }
 a:hover {
-	color: SkyBlue;
+	color: skyblue;
+}
+
+h1, h2, h3, h4, p, ul, ol {
+	margin: 0 8px 8px 0px;
+	text-align: justify;
+	clear: both;
+}
+h1, h2, h3, h4, h5, h6 {
+	font-weight: 500;
+	text-align: left;
+}
+
+label {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center
+}
+label span {
+	margin: 0 2px;
+}
+
+.small {
+	font-size: small;
+}
+.small input[type=checkbox] {
+	vertical-align: middle;
+}
+
+input[type=number],
+input[type=time] {
+	font-family: 'Segoe UI', monospace;
 }
 
 
+
+
+
+  /**********/
+ /* Layout */
+/**********/
 
 body {
+	min-height: 100vh;
+	position: relative;
 	background: SkyBlue;
 }
-main {
-	width: 720px;
-	margin: 20px auto;
-	padding: 20px;
-	background: snow;
 
-	position: relative;
+header .content {
+	display: flex; 
+	justify-content: space-between; 
 }
-
-
-
-.icons {
-	position: absolute;
-	top: 20px;
-	right: 32px;
+header h1 {
 	font-size: xx-large;
+	margin: 0;
 }
 
-.status {
-	display: grid;
-	grid-template-columns: 15% 23% 19% 8% 21% 8%;
-	grid-gap: 8px;
+main {
+	margin: 0 auto;
+}
+header .content,
+section {
+	padding: 4px 8px;
+	/* padding-top: 4px; */
+	margin: 8px;
+	background: snow;
+}
+
+@media (min-width: 800px) {
+	header .content,
+	section {
+		padding: 12px 16px;
+		/* padding-top: 12px; */
+		margin: 8px;
+	}
+}
+
+
+
+
+
+  /***********/
+ /* Helpers */
+/***********/
+
+.nice-container {
+	width: 100%;
+}
+@media (min-width: 800px) {
+	.nice-container {
+		width: 800px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+}
+/* @media (min-width: 1200px) {
+	.nice-container {
+		width: calc(1200px - 32px);
+	}
+} */
+
+.header-with-aside {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between; 
+	justify-items: center;
+	align-items: center;
+	margin-bottom: 8px;
+}
+.header-with-aside > * {
+	display: block;
+	flex-grow: 1;
+}
+.header-with-aside > :first-child {
+	align-self: stretch;
+	justify-self: self-start;
+	margin: 0;
+	flex-grow: 99;
+}
+
+.flex {
+	display: flex;
+	flex-wrap: wrap;
+}
+.flex-evenly {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
+}
+.flex-center {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.spaced > * {
+	margin: 4px;
+}
+
+
+
+
+
+  /******************/
+ /* Specific stuff */
+/******************/
+
+@media (max-width: 440px) { 
+	header h1 {
+		font-size: x-large;
+		align-self: center;
+	}
+}
+
+#status .grid {
+	display: flex;
+	justify-content: space-evenly;
+	flex-wrap: wrap;
 	text-align: end;
 }
-.status output {
+#status .grid label {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+}
+#status .grid span {
+	margin-right: 4px;
+}
+#status .grid output {
 	text-align: start;
 	font-size: large;
 }
 
-label {
-	font-size: small;
-}
-label input[type=checkbox] {
-	vertical-align: middle;
-}
-label.aside {
-	float: right;
-	margin-right: 8px;
+#status .grid .subgrid.columns-70-30 label {
+	grid-template-columns: 70% 30%;
 }
 
-#ping, #rssi {
-	color: gray;
-	margin-right: 16px;
+#status .header-with-aside label {
+	margin-left: 16px;
 }
-#ping.error {
+#status .header-with-aside output {
+	display: inline-block;
+	text-align: end;
+	min-width: 40px;
+}
+
+output.error {
 	color: FireBrick;
 }
 
-#waterLevel, #refillTankLevel {
+output[name=waterLevel], 
+output[name=refillTankLevel] {
 	font-size: small;
 }
 
 
 
-.colors {
+#colors .grid {
 	display: grid;
-	/* grid-template-columns: 1fr 8fr 0.5fr; */
 	grid-template-columns: 0.2fr 1.5fr 0.02fr;
 	grid-gap: 8px;
 	text-align: end;
 }
-.colors input[type=range] {
+#colors input[type=range] {
 	height: 24px;
 	background: #d3d3d3;
 	outline: none;
@@ -97,32 +231,43 @@ label.aside {
 	opacity: 0.8;
 	transition: opacity .2s;
 }
-.colors input[type=range]::-webkit-slider-thumb {
+#colors input[type=range]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 24px;
 	height: 24px;
 	cursor: pointer;
 }
-.colors input[type=range]:hover {
+#colors input[type=range]:hover {
 	opacity: 1;
 }
-#red-slider::-webkit-slider-thumb {
+
+#colors input[type=range][name=red]::-webkit-slider-thumb {
 	background: FireBrick;
 }
-#green-slider::-webkit-slider-thumb {
+#colors input[type=range][name=green]::-webkit-slider-thumb {
 	background: ForestGreen
 }
-#blue-slider::-webkit-slider-thumb {
+#colors input[type=range][name=blue]::-webkit-slider-thumb {
 	background: DodgerBlue;
 }
-#white-slider::-webkit-slider-thumb {
+#colors input[type=range][name=white]::-webkit-slider-thumb {
 	background: GoldenRod;
 }
-.colors input[type=number] {
+
+#colors .grid input[type=number] {
 	display: inline-block;
 	line-height: 8px;
-	width: 40px;
+	width: 48px;
 }
+
+
+
+#heating input[type=number] {
+	width: 56px;
+}
+
+
+
 
 
 .colors-cycle table {
@@ -136,7 +281,7 @@ label.aside {
 .colors-cycle table input[type=number] {
 	display: block;
 	margin: auto;
-	width: 64px;
+	width: 48px;
 	text-align: end;
 }
 .colors-cycle table th {
@@ -144,22 +289,12 @@ label.aside {
 	font-weight: normal;
 }
 
-.colors-cycle table tbody tr:first-of-type:not(.template) td:first-of-type button:first-of-type {
+.colors-cycle table tbody tr:first-of-type td:first-of-type button:first-of-type {
 	visibility: hidden;
 }
 
 .colors-cycle .template {
 	display: none;
-}
-
-
-
-.heating, .circulator, .other {
-	display: flex;
-	justify-content: space-evenly;
-}
-.heating input[type=number] {
-	width: 50px;
 }
 
 
@@ -214,5 +349,7 @@ svg#chart .tooltip .text--waterTemperature {
 svg#chart .tooltip .text--phLevel {
 	color: ForestGreen;
 }
+
+
 
 

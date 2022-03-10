@@ -320,14 +320,14 @@ namespace SmoothTimedPWM {
 		}
 	}
 
-	void pushColorsHandler() {
+	void setColorsHandler() {
 		const char* cstr = server.arg("plain").c_str();
 		unsigned short length = strlen(cstr);
 		unsigned short offset = 0;
 #if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-		Serial.print(F("SmoothTimedPWM::pushColorsHandler() length: "));
+		Serial.print(F("SmoothTimedPWM::setColorsHandler() length: "));
 		Serial.println(length);
-		Serial.print(F("SmoothTimedPWM::pushColorsHandler() content: "));
+		Serial.print(F("SmoothTimedPWM::setColorsHandler() content: "));
 		Serial.println(cstr);
 #endif
 		if (length < 14) {
@@ -364,7 +364,7 @@ namespace SmoothTimedPWM {
 			EEPROM.put(entriesEEPROMOffset + i * sizeof(Entry), entry);
 			entriesCount++;
 #if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-			Serial.print(F("SmoothTimedPWM::pushColorsHandler() Entry["));
+			Serial.print(F("SmoothTimedPWM::setColorsHandler() Entry["));
 			Serial.print(i);
 			Serial.print(F("] = "));
 			entry.printOut();
@@ -372,7 +372,7 @@ namespace SmoothTimedPWM {
 #endif
 			if (offset >= length) {
 #if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-				Serial.println(F("SmoothTimedPWM::pushColorsHandler() offset >= length ("));
+				Serial.println(F("SmoothTimedPWM::setColorsHandler() offset >= length ("));
 				Serial.print(offset);
 				Serial.print(" >= ");
 				Serial.println(length);
@@ -382,7 +382,7 @@ namespace SmoothTimedPWM {
 		}
 
 #if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-		Serial.print(F("SmoothTimedPWM::pushColorsHandler() entries count: "));
+		Serial.print(F("SmoothTimedPWM::setColorsHandler() entries count: "));
 		Serial.println(entriesCount);
 #endif
 
@@ -392,7 +392,7 @@ namespace SmoothTimedPWM {
 		}
 
 		if (entriesCount == maxEntriesCount && offset < length - 4) {
-			Serial.println(F("SmoothTimedPWM::pushColorsHandler() Too much entries sent, discarding"));
+			Serial.println(F("SmoothTimedPWM::setColorsHandler() Too much entries sent, discarding"));
 		}
 
 		// Run setup to update after change

@@ -2,173 +2,216 @@
 <html lang="pl">
 <head>
 	<meta charset="UTF-8">
-	<meta name="author" content="Patryk Ludwikowski <patryk.ludwikowski.7@gmail.com>">
 	<title>Kontroler akwarium morskiego</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="style.css" type="text/css">
-	<link rel="icon" type="image/x-icon" href="favicon.ico" />
+	<meta name="author" content="Patryk Ludwikowski (patryk.ludwikowski.7@gmail.com)">
 </head>
 <body>
+	<header>
+		<div class="nice-container">
+			<div class="content">
+				<h1>Kontroler akwarium morskiego</h1>
+				<div style="font-size: xx-large;">🐟🐠🐡🌊</div>
+			</div>
+		</div>
+	</header>
 	<main>
-		<!-- STATUS -->
-		<div class="icons">🐟🐠🐡🌊</div>
-		<h1>Kontroler akwarium morskiego.</h1>
-		<hr/>
-		<label class="aside" id="ping"></label>
-		<label class="aside" id="rssi">Siła sygnału WiFi:&nbsp;<output></output></label>
-		<h4>Status kontrolera</h4>
-		<div class="status">
-			<!--  -->
-			<div>Czas układu:</div>
-			<output id="datetime"></output>
-			<div>Temperatura wody:</div>
-			<output id="waterTemperature"></output>
-			<div>Poziom pH wody:</div>
-			<output id="phLevel"></output>
-			<!--  -->
-			<label></label>
-			<label style="text-align: center;">
-				<input type="checkbox" onchange="this.checked && synchronizeTime()"/>
-				Synchronizuj czas
-			</label>
-			<label>Temperatura powietrza:</label>
-			<output id="airTemperature"></output>
-			<label>Poziom wody akwarium:</label>
-			<output id="waterLevel"></output>
-			<!--  -->
-			<label></label>
-			<label></label>
-			<label>Grzałka akwarium:</label>
-			<output id="isHeating"></output>
-			<label>Poziom dolewki RO:</label>
-			<output id="refillTankLevel"></output>
+		<div class="nice-container">
+			<section id="status">
+				<div class="header-with-aside">
+					<h2>Status kontrolera</h2>
+					<div class="flex-center small spaced" style="color: gray;">
+						<label>
+							<span>Siła sygnału WiFi:</span>
+							<output name="rssi"></output>
+						</label>
+						<label>
+							<span>Ping:</span>
+							<output name="ping"></output>
+						</label>
+					</div>
+				</div>
+				<div class="grid">
+					<div class="subgrid" style="width: 250px;">
+						<label>
+							<span>Czas układu:</span>
+							<output name="datetime"></output>
+						</label>
+					</div>
+					<div class="subgrid columns-70-30" style="width: 250px;">
+						<label>
+							<span>Temperatura wody:</span>
+							<output name="waterTemperature"></output>
+						</label>
+						<label>
+							<span>Temperatura powietrza:</span>
+							<output name="airTemperature"></output>
+						</label>
+						<label>
+							<span>Grzałka akwarium:</span>
+							<output name="heating"></output>
+						</label>
+					</div>
+					<div class="subgrid columns-70-30" style="width: 230px;">
+						<label>
+							<span>Poziom pH wody:</span>
+							<output name="phLevel"></output>
+						</label>
+						<label>
+							<span>Poziom wody akwarium:</span>
+							<output name="waterLevel"></output>
+						</label>
+						<label>
+							<span>Poziom dolewki RO:</span>
+							<output name="refillTankLevel"></output>
+						</label>
+					</div>
+				</div>
+			</section>
+			<section id="colors">
+				<div class="header-with-aside">
+					<h2>Ustawienia kolorów oświetlenia</h2>
+					<div class="flex-center small spaced">
+						<label title="Jeśli zaznaczone, pozwala na podgląd poprzez ustawienie kolorów do wartości suwaków (cykl ignorowany).">
+							<input type="checkbox" name="preview">
+							<span>Podgląd</span>
+						</label>
+						<label title="Jeśli zaznaczone, wymusza podgląd na 3 sekundy po próbie zmiany suwaków.">
+							<input type="checkbox" name="previewOnChange" checked>
+							<span>Podgląd przy zmianie</span>
+						</label>
+					</div>
+				</div>
+				<div class="grid">
+					<span>Czerwone:</span>
+					<input type="range" min="0" max="255" value="0" step="1" name="red" />
+					<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="red" />
+					<span>Zielone:</span>
+					<input type="range" min="0" max="255" value="0" step="1" name="green" />
+					<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="green"/>
+					<span>Niebieskie:</span>
+					<input type="range" min="0" max="255" value="0" step="1" name="blue" />
+					<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="blue" />
+					<span>Białe:</span>
+					<input type="range" min="0" max="255" value="0" step="1" name="white" />
+					<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="white" />
+				</div>
+				<br/>
+				<h3>Cykl dobowy oświetlania</h3>
+				<figure class="colors-cycle">
+					<table>
+						<colgroup>
+							<col/>
+							<col/>
+							<col/>
+							<col/>
+							<col style="width:20%"/>
+							<col/>
+							<col/>
+							<col/>
+							<col/>
+							<col/>
+						</colgroup>  
+						<thead>
+							<tr>
+								<th></th>
+								<th></th>
+								<th></th>
+								<th></th>
+								<th>Punkt doby (godzina)</th>
+								<th>Czerwone</th>
+								<th>Zielone</th>
+								<th>Niebieskie</th>
+								<th>Białe</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<template>
+								<tr>
+									<td><button name="remove" title="Usuń wpis">⨯</button></td>
+									<td><button name="move-up" title="Przesuń wpis do góry">↑</button></td>
+									<td><button name="move-down" title="Przesuń wpis w dół">↓</button></td>
+									<td><button name="clone" title="Sklonuj wpis">📋</button></td>
+									<td><input type="time" value="12:00" /></td>
+									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="red" /></td>
+									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="green" /></td>
+									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="blue" /></td>
+									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="white" /></td>
+									<td><button name="preview" title="Wyślij ustawienie z wpisu do podglądu">Pokaż</button></td>
+									<td><button name="set-from-current" title="Ustaw wpis z obecnych ustawień">↵</button></td>
+								</tr>
+							</template>
+						</tbody>
+					</table>
+				</figure>
+				<div class="flex-center spaced">
+					<button name="add-from-current">Dodaj obecne</button>
+					<button name="upload">Wyślij ustawienia</button>
+					<button name="download">Pobierz ustawienia</button>
+					<button name="reset">Resetuj do domyślnych</button>
+				</div>
+			</section>
+			<section id="heating">
+				<h2>Ustawienia ogrzewania wody</h2>
+				<div class="flex-evenly spaced">
+					<label>
+						<span>Temperatura minimalna:</span>
+						<input type="number" min="0.0" max="60.0" value="21.25" step="0.25" name="heatingMinTemperature" />
+						<span>°C</span>
+					</label>
+					<label>
+						<span>Temperatura maksymalna:</span>
+						<input type="number" min="0.0" max="60.0" value="24.50" step="0.25" name="heatingMaxTemperature" />
+						<span>°C</span>
+					</label>
+				</div>
+			</section>
+			<section id="circulator">
+				<h2>Ustawienia cyrkulatora wody</h2>
+				<div class="flex-evenly spaced">
+					<label>
+						<span>Czas aktywny:</span>
+						<input type="time" step="1" min="00:00:00" max="18:00:00" name="circulatorActiveTime">
+					</label>
+					<label>
+						<span>Czas przerwy:</span>
+						<input type="time" step="1" min="00:00:00" max="18:00:00" name="circulatorPauseTime">
+					</label>
+				</div>
+			</section>
+			<section id="other">
+				<h2>Inne ustawienia</h2>
+				<div class="flex-evenly spaced">
+					<label>
+						<span>Częstotliwość wysyłania odczytów do chmury:</span>
+						<input type="time" step="1" min="00:00:05" max="02:00:00" name="cloudLoggingInterval" />
+					</label>
+				</div>
+			</section>
+			<section id="save">
+				<h2>Zapisywanie ustawień</h2>
+				<div class="flex-center spaced">
+					<button name="synchronize-time">Synchronizuj czas</button>
+					<button name="save-eeprom">Zapisz ustawienia na EEPROM</button>
+				</div>
+			</section>
+			<section id="charts">
+				<div class="header-with-aside">
+					<h2>Wykres historyczny</h2>
+					<div class="flex-center small spaced">
+						<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 60 * 60 * 1000), new Date())">Pokaż ostatnią godzinę</a>
+						<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 24 * 60 * 60 * 1000), new Date())">Pokaż ostatnią dobę</a>
+						<a href="wykres.html">Otwórz na pełnej stronie</a>
+					</div>
+				</div>
+				<svg id="chart" width="100%" height="500"></svg>
+			</section>
 		</div>
-		<hr/>
-		<!-- COLORS  -->
-		<label class="aside">
-			<input type="checkbox" oninput="setForceColors(this.checked)">
-			Wymuś ustawienie
-		</label>
-		<h4>Ustawienia kolorów oświetlenia</h4>
-		<div class="colors">
-			<div>Czerwone:</div>
-			<input type="range" min="0" max="255" value="0" step="1" id="red-slider" />
-			<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" id="red" />
-			<div>Zielone:</div>
-			<input type="range" min="0" max="255" value="0" step="1" id="green-slider" />
-			<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" id="green"/>
-			<div>Niebieskie:</div>
-			<input type="range" min="0" max="255" value="0" step="1" id="blue-slider" />
-			<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" id="blue" />
-			<div>Białe:</div>
-			<input type="range" min="0" max="255" value="0" step="1" id="white-slider" />
-			<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" id="white" />
-		</div>
-		<br/>
-		<h5>Cykl dobowy oświetlania</h5>
-		<div class="colors-cycle">
-			<table>
-				<colgroup>
-					<col/>
-					<col/>
-					<col/>
-					<col/>
-					<col style="width:20%"/>
-					<col/>
-					<col/>
-					<col/>
-					<col/>
-					<col/>
-				</colgroup>  
-				<thead>
-					<tr>
-						<th></th>
-						<th></th>
-						<th></th>
-						<th></th>
-						<th>Punkt doby (godzina)</th>
-						<th>Czerwone</th>
-						<th>Zielone</th>
-						<th>Niebieskie</th>
-						<th>Białe</th>
-						<th></th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr class="template">
-						<td><button onclick="rowRemove(this.parentElement.parentElement)" title="Usuń wpis">⨯</button></td>
-						<td><button onclick="rowUp(this.parentElement.parentElement)" title="Przesuń wpis do góry">↑</button></td>
-						<td><button onclick="rowDown(this.parentElement.parentElement)" title="Przesuń wpis w dół">↓</button></td>
-						<td><button onclick="rowClone(this.parentElement.parentElement)" title="Sklonuj wpis">📋</button></td>
-						<td><input type="time" value="12:00" /></td>
-						<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="red" /></td>
-						<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="green" /></td>
-						<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="blue" /></td>
-						<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="white" /></td>
-						<td><button onclick="rowShowOnSliders(this.parentElement.parentElement)">Pokaż</button></td>
-						<td><button onclick="setFromCurrent(this.parentElement.parentElement)" title="Ustaw z obecnych ustawień">↵</button></td>
-					</tr>
-				</tbody>
-			</table>
-			<button onclick="colorsCycle.addFromCurrent()">Dodaj obecne</button>
-			<button onclick="colorsCycle.upload()">Wyślij ustawienia</button>
-			<button onclick="colorsCycle.download()">Pobierz ustawienia</button>
-			<button onclick="colorsCycle.reset()">Resetuj do domyślnych</button>
-		</div>
-		<hr/>
-		<!-- HEATING  -->
-		<h4>Ustawienia ogrzewania wody</h4>
-		<div class="heating">
-			<label>
-				Temperatura minimalna: 
-				<input type="number" min="0.0" max="60.0" value="21.25" step="0.25" id="heatingMinTemperature" />
-				°C
-			</label>
-			<label>
-				Temperatura maksymalna: 
-				<input type="number" min="0.0" max="60.0" value="24.50" step="0.25" id="heatingMaxTemperature" />
-				°C
-			</label>
-		</div>
-		<hr/>
-		<!-- CIRCULATOR  -->
-		<h4>Ustawienia cyrkulatora wody</h4>
-		<div class="circulator">
-			<label>
-				Czas aktywny:&nbsp;
-				<input type="time" step="1" min="00:00:00" max="18:00:00" id="circulatorActiveTime">
-			</label>
-			<label>
-				Czas przerwy:&nbsp;
-				<input type="time" step="1" min="00:00:00" max="18:00:00" id="circulatorPauseTime">
-			</label>
-		</div>
-		<hr/>
-		<!-- OTHER  -->
-		<h4>Inne ustawienia</h4>
-		<div class="other">
-			<label>
-				Częstotliwość wysyłania odczytów do chmury:&nbsp;
-				<input type="time" step="1" min="00:00:05" max="02:00:00" id="cloudLoggingInterval" />
-			</label>
-		</div>
-		<hr/>
-		<!-- SAVE  -->
-		<h4>Zapisywanie ustawień</h4>
-		<button onclick="saveSettingsToEEPROM()">Zapisz ustawienia na EEPROM</button>
-		<hr/>
-		<!-- CHARTS  -->
-		<label class="aside" style="margin-top: 2px">
-			<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 60 * 60 * 1000), new Date())">Pokaż ostatnią godzinę</a>
-			&nbsp;&nbsp;&nbsp;
-			<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 24 * 60 * 60 * 1000), new Date())">Pokaż ostatnią dobę</a>
-			&nbsp;&nbsp;&nbsp;
-			<a href="wykres.html">Otwórz na pełnej stronie</a>
-		</label>
-		<h4>Wykres historyczny</h4>
-		<svg id="chart" width="100%" height="600"></svg>
 	</main>
-	<script type="text/javascript" src="main.js" defer></script>
-	<script src="https://d3js.org/d3.v4.min.js" onerror="alert('Nie można załadować wykresu. Brak połączenia z internetem?')" defer></script>
+	<script src="https://d3js.org/d3.v4.min.js" onerror="alert('Nie można załadować biblioteki D3JS dla wykresów. Brak połączenia z internetem?')" defer></script>
 	<script type="text/javascript" src="charts.js" defer></script>
+	<script type="text/javascript" src="main.js" defer></script>
 </body>
 </html>

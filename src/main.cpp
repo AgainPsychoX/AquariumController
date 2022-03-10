@@ -296,6 +296,7 @@ void setup() {
 		}
 		showIP = false;
 	});
+	// Built-in LED should not be activated outside early setup, as OneWire uses the same pin.
 	// server.on("/led", []() {
 	//     if (server.args() > 0) {
 	//         buildInLed.on();
@@ -310,7 +311,7 @@ void setup() {
 		server.send(200);
 	});
 	server.on("/getColorsCycle", SmoothTimedPWM::getColorsHandler);
-	server.on("/pushColorsCycle", SmoothTimedPWM::pushColorsHandler);
+	server.on("/setColorsCycle", SmoothTimedPWM::setColorsHandler);
 	server.on("/resetColorsCycle", SmoothTimedPWM::resetColorsHandler);
 	server.onNotFound([]() {
 		server.send(404, WEB_CONTENT_TYPE_TEXT_PLAIN, "Not found\n\n");
