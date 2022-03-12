@@ -13,9 +13,9 @@ const char WEB_CONTENT_ENCODING_P[] PROGMEM       = "Content-Encoding";
 const char WEB_CONTENT_ENCODING_GZIP_P[] PROGMEM  = "gzip";
 
 const String WEB_CACHE_CONTROL         = String(FPSTR(WEB_CACHE_CONTROL_P));
-const String WEB_CACHE_CONTROL_CACHE   = String(FPSTR(WEB_CACHE_CONTROL_P));
-const String WEB_CONTENT_ENCODING      = String(FPSTR(WEB_CACHE_CONTROL_P));
-const String WEB_CONTENT_ENCODING_GZIP = String(FPSTR(WEB_CACHE_CONTROL_P));
+const String WEB_CACHE_CONTROL_CACHE   = String(FPSTR(WEB_CACHE_CONTROL_CACHE_P));
+const String WEB_CONTENT_ENCODING      = String(FPSTR(WEB_CONTENT_ENCODING_P));
+const String WEB_CONTENT_ENCODING_GZIP = String(FPSTR(WEB_CONTENT_ENCODING_GZIP_P));
 
 const char WEB_CONTENT_TYPE_TEXT_PLAIN[] PROGMEM                = "text/plain";
 const char WEB_CONTENT_TYPE_TEXT_HTML[] PROGMEM                 = "text/html";
