@@ -90,8 +90,8 @@ section {
 @media (min-width: 800px) {
 	header .content,
 	section {
-		padding: 12px 16px;
-		/* padding-top: 12px; */
+		padding: 8px 12px;
+		/* padding-top: 8px; */
 		margin: 8px;
 	}
 }
@@ -259,16 +259,6 @@ output[name=refillTankLevel] {
 	width: 48px;
 }
 
-
-
-#heating input[type=number] {
-	width: 56px;
-}
-
-
-
-
-
 .colors-cycle table {
 	margin: 8px auto;
 	/* table-layout: fixed; */
@@ -298,12 +288,37 @@ output[name=refillTankLevel] {
 
 
 
+#heating input[type=number] {
+	width: 56px;
+}
+
+
+
+#minerals .grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+}
+#minerals .grid .item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 4px;
+}
+#minerals .grid .item h3 {
+	text-align: center;
+}
+#minerals .grid .item input[type=number] {
+	width: 48px;
+}
+
+
+
 svg#chart .line {
 	fill: none;
 	stroke-width: 1.5px;
 	stroke: DodgerBlue;
 }
-svg#chart .line--airTemperature {
+svg#chart .line--rtcTemperature {
 	stroke: GoldenRod;
 }
 svg#chart .line--waterTemperature {
@@ -339,7 +354,7 @@ svg#chart .tooltip body {
 	font-size: small;
 	font-weight: bold;
 }
-svg#chart .tooltip .text--airTemperature {
+svg#chart .tooltip .text--rtcTemperature {
 	color: GoldenRod;
 }
 svg#chart .tooltip .text--waterTemperature {

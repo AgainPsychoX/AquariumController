@@ -35,6 +35,11 @@ const config = {
 	circulatorPauseTime: 7,
 	cloudLoggingInterval: 1 * 60,
 	forceColors: false,
+	mineralsPumps: {
+		ca: {time: 9 * 60 + 20, mL: 20},
+		mg: {time: 9 * 60 + 25, mL: 25},
+		kh: {time: 9 * 60 + 30, mL: 30},
+	},
 };
 let red = 127;
 let green = 127;
@@ -121,8 +126,20 @@ app.get('/config', (req, res) => {
 	if (req.query.heatingMaxTemperature) {
 		config.heatingMaxTemperature = parseFloat(req.query.heatingMaxTemperature);
 	}
+	for (const key of ['ca', 'mg', 'kh']) {
+		if (req.query[`mineralPumps.${key}.time`]) {
+			config.mineralsPumps[key].time = parseInt(config.mineralsPumps[key].time);
+		}
+		if (req.query[`mineralPumps.${key}.mL`]) {
+			config.mineralsPumps[key].mL = parseInt(config.mineralsPumps[key].mL);
+		}
+	}
 	res.status(200);
 	res.json(config);
+});
+app.get('/test', (req, res) => {
+	res.status(200);
+	res.json({});
 });
 app.get('/saveEEPROM', (req, res) => {
 	res.sendStatus(200);

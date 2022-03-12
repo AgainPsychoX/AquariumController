@@ -57,7 +57,7 @@ namespace SmoothTimedPWM {
 				redValue(red), greenValue(green), blueValue(blue), whiteValue(white)
 		{}
 
-		uint32_t getTimepointSchleudedAfter(const DateTime& dateTime) const {
+		uint32_t getTimepointScheduledAfter(const DateTime& dateTime) const {
 			uint32_t timepoint = dateTime.unixtime();
 			signed char hourDiff = static_cast<signed char>(this->hour) - dateTime.hour();
 			signed char minuteDiff = static_cast<signed char>(this->minute) - dateTime.minute();
@@ -68,7 +68,7 @@ namespace SmoothTimedPWM {
 			return timepoint;
 		}
 
-		uint32_t getTimepointSchleudedBefore(const DateTime& dateTime) const {
+		uint32_t getTimepointScheduledBefore(const DateTime& dateTime) const {
 			uint32_t timepoint = dateTime.unixtime();
 			signed char hourDiff = static_cast<signed char>(this->hour) - dateTime.hour();
 			signed char minuteDiff = static_cast<signed char>(this->minute) - dateTime.minute();
@@ -241,8 +241,8 @@ namespace SmoothTimedPWM {
 		}
 
 		// Calculate timepoints
-		nextTime = nextEntry.getTimepointSchleudedAfter(now);
-		previousTime = previousEntry.getTimepointSchleudedBefore(now);
+		nextTime = nextEntry.getTimepointScheduledAfter(now);
+		previousTime = previousEntry.getTimepointScheduledBefore(now);
 
 #if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 1
 		Serial.print(F("SmoothTimedPWM::setup() previous entry: "));
@@ -273,7 +273,7 @@ namespace SmoothTimedPWM {
 				EEPROM.get(entriesEEPROMOffset + ((++nextEntryIndex) % maxEntriesCount) * sizeof(Entry), nextEntry);
 			}
 			while (!nextEntry.isValid());
-			nextTime = nextEntry.getTimepointSchleudedAfter(now);
+			nextTime = nextEntry.getTimepointScheduledAfter(now);
 
 #if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
 			Serial.print(F("SmoothTimedPWM::update() next entry: "));

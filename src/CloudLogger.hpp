@@ -11,7 +11,7 @@ namespace CloudLogger {
 
 	unsigned long int interval = 0;
 	inline unsigned long int parseIntervalFromSetting(uint8_t setting) {
-		return static_cast<unsigned long int>(setting & 0b10000000 ? 60 : 1) * (setting & 0b01111111);
+		return static_cast<unsigned long int>((setting & 0b10000000) ? 60 : 1) * (setting & 0b01111111) * 1000;
 	}
 	inline uint8_t parseIntervalToSetting(unsigned long int interval) {
 		unsigned short int seconds = interval / 1000;
@@ -28,7 +28,7 @@ namespace CloudLogger {
 
 	struct Entry {
 		float waterTemperature;
-		float airTemperature;
+		float rtcTemperature;
 		float phLevel;
 	};
 
@@ -64,12 +64,12 @@ namespace CloudLogger {
 		int writtenLength = snprintf(
 			dataBuffer, bufferLength,
 			"{"
-				"\"airTemperature\":%.2f,"
+				"\"rtcTemperature\":%.2f,"
 				"\"waterTemperature\":%.2f,"
 				"\"phLevel\":%.2f,"
 				"\"timestamp\":\"%04d-%02d-%02dT%02d:%02d:%02d\""
 			"}",
-			entry.airTemperature,
+			entry.rtcTemperature,
 			entry.waterTemperature,
 			entry.phLevel,
 			// Format should be like: "2004-02-12T15:19:21" (without time zones)
@@ -132,7 +132,8 @@ namespace CloudLogger {
 		interval = parseIntervalFromSetting(intervalSetting);
 #if DEBUG_CLOUD_LOGGER >= 1
 		if (interval < 10000) {
-			Serial.println(F("Cloud logging interval too short, using 10 seconds."));
+			Serial.print(F("CloudLogger::push() Interval too short, using 10 seconds. Setting was "));
+			Serial.println(intervalSetting, BIN);
 			interval = 10000;
 		}
 #endif

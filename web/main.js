@@ -79,39 +79,50 @@ for (const color of colors) {
 }
 
 // Colors previewing
-const previewColorsCheckbox = document.querySelector('#colors input[name=preview]');
-function isPreviewingColors() {
-	return previewColorsCheckbox.checked;
+const previewColorsOnChange = {
+	duration: Infinity,
+	checkbox: false,
+	timeout: 0,
 }
-async function setPreviewColors(checked) {
-	previewColorsCheckbox.checked = checked;
+
+const previewOnChangeCheckbox = document.querySelector('#colors input[name=previewOnChange]');
+if (!previewColorsOnChange.checkbox) {
+	previewOnChangeCheckbox.style.display = 'none';
+}
+
+const manualColorsCheckbox = document.querySelector('#colors input[name=manual]');
+function isManualColors() {
+	return manualColorsCheckbox.checked;
+}
+async function setManualColors(checked) {
+	manualColorsCheckbox.checked = checked;
 	await fetch(`${baseHost}/config?forceColors=${checked}`);
 }
-previewColorsCheckbox.addEventListener('input', function () {
+manualColorsCheckbox.addEventListener('input', function () {
 	fetch(`${baseHost}/config?forceColors=${this.checked}`);
 	if (!this.checked) {
-		clearTimeout(previewColorsOnChangeTimeout);
+		clearTimeout(previewColorsOnChange.timeout);
 	}
 })
 
-let previewColorsOnChangeTimeout = 0;
 async function tryPreviewColors() {
 	const restartTimeout = () => {
-		clearTimeout(previewColorsOnChangeTimeout);
-		previewColorsOnChangeTimeout = setTimeout(() => {
-			setPreviewColors(false);
-			previewColorsOnChangeTimeout = 0;
-		}, 3333);
+		if (!isFinite(previewColorsOnChange.duration)) return;
+		clearTimeout(previewColorsOnChange.timeout);
+		previewColorsOnChange.timeout = setTimeout(() => {
+			setManualColors(false);
+			previewColorsOnChange.timeout = 0;
+		}, previewColorsOnChange.duration);
 	}
-	if (isPreviewingColors()) {
+	if (isManualColors()) {
 		sendColorsPreview();
-		if (previewColorsOnChangeTimeout) {
+		if (previewColorsOnChange.timeout) {
 			restartTimeout();
 		}
 	}
 	else {
-		if (document.querySelector('#colors input[name=previewOnChange]').checked) {
-			await setPreviewColors(true);
+		if (previewOnChangeCheckbox.checked) {
+			await setManualColors(true);
 			sendColorsPreview();
 			restartTimeout();
 		}
@@ -124,7 +135,7 @@ function sendColorsPreview() {
 	const querystring = Object.entries(colorsInputs).map(([c, e]) => `${c}=${e.value}`).join('&');
 	if (!colorsPreviewPending) {
 		const send = (querystring) => {
-			if (!isPreviewingColors()) {
+			if (!isManualColors()) {
 				colorsPreviewPending = undefined;
 			}
 			fetch(`${baseHost}/config?${querystring}`).finally(() => {
@@ -217,7 +228,7 @@ class ColorsCycleManager {
 
 	getRowData(row) {
 		const data = {
-			time: row.querySelector('input[type=time]').value,
+			time: row.querySelector('input[type=time]').value.substring(0, 5),
 		};
 		for (const color of colors) {
 			data[color] = row.querySelector(`input[name=${color}]`).value;
@@ -242,6 +253,7 @@ class ColorsCycleManager {
 		const body = [...this.tbody.children]
 			.map(row => this.getRowData(row))
 			.map(data => `#${data.red},${data.green},${data.blue},${data.white}@${data.time}`)
+			.join('')
 		;
 		return fetch(`${baseHost}/setColorsCycle`, {
 			method: 'POST',
@@ -321,7 +333,6 @@ document.querySelector('#colors button[name=reset]').addEventListener('click', (
 			.then(state => {
 				for (const key in state) {
 					const value = state[key];
-					const previewColors = document.querySelector('#colors input[name=preview]').checked;
 					switch (key) {
 						case 'timestamp': {
 							const b = value.split(/\D/);
@@ -330,7 +341,7 @@ document.querySelector('#colors button[name=reset]').addEventListener('click', (
 							break;
 						}
 						case 'waterTemperature':
-						case 'airTemperature':
+						case 'rtcTemperature':
 							document.querySelector(`output[name=${key}]`).innerText = value + '°C';
 							break;
 						case 'phLevel':
@@ -346,7 +357,7 @@ document.querySelector('#colors button[name=reset]').addEventListener('click', (
 						case 'green':
 						case 'blue':
 						case 'white':
-							if (!isPreviewingColors()) {
+							if (!isManualColors()) {
 								colorsInputs[key].value = colorsSliders[key].value = value;
 							}
 							break;
@@ -406,17 +417,21 @@ const byValueSettings = [
 ];
 const byValueSettingsInputs = Object.fromEntries(byValueSettings.map(name => [name, document.querySelector(`input[name=${name}]`)]));
 
-function saveSettings() {
+function parseTimeInput(input) {
+	const h = parseInt(input.value);
+	const m = parseInt(input.value.substring(3));
+	const s = parseInt(input.value.substring(6)) || 0;
+	return ((h * 60) + m) * 60 + s;
+}
+
+function saveByValueSettings() {
 	const querystring = Object.entries(byValueSettingsInputs).map(([name, element]) => {
 		switch (element.type) {
 			case 'checkbox': {
 				return `${name}=${element.checked}`;
 			}
 			case 'time': {
-				const h = parseInt(element.value);
-				const m = parseInt(element.value.substring(3));
-				const s = parseInt(element.value.substring(6)) || 0;
-				return `${name}=${((h * 60) + m) * 60 + s}`;
+				return `${name}=${parseTimeInput(element)}`;
 			}
 			default: {
 				return `${name}=${element.value}`;
@@ -426,23 +441,38 @@ function saveSettings() {
 	return fetch(`${baseHost}/config?${querystring}`);
 };
 
-// Save settings on change, debounced 
-const debouncedSaveSettings = debounce(saveSettings, 1000);
+// Save by-value settings on change, debounced 
+const debouncedSaveByValueSettings = debounce(saveByValueSettings, 1000);
 for (const input of Object.values(byValueSettingsInputs)) {
-	input.addEventListener('change', debouncedSaveSettings);
+	input.addEventListener('change', debouncedSaveByValueSettings);
 }
 byValueSettingsInputs['cloudLoggingInterval'].addEventListener('change', function () {
-	restartChartsUpdate(parseInt(this.value));
+	restartChartsUpdate(parseTimeInput(this));
 })
 
-document.querySelector('button[name=save-eeprom]').addEventListener('click', () => {
-	const promise = Promise.all([
-		colorsCycleManager.upload(),
-		saveSettings(),
-	])
+const minerals = [
+	{key: 'Ca', name: 'Chlorek wapnia CaCl₂'},
+	{key: 'Mg', name: 'Chlorek magnezu MgCl₂'},
+	{key: 'KH', name: 'Wodorowęglan sodu NaHCO₃'},
+];
+function saveMineralsPumpsSettings() {
+	const querystring = minerals.map(mineral => {
+		const key = mineral.key.toLowerCase();
+		const div = document.querySelector(`#minerals .grid div[name=${key}]`)
+		return (
+			`mineralsPumps.${key}.time=${parseTimeInput(div.querySelector('input[type=time]')) / 60}&` +
+			`mineralsPumps.${key}.mL=${div.querySelector('input[type=number]').value}`
+		);
+	}).join('&');
+	return fetch(`${baseHost}/config?${querystring}`);
+}
+
+document.querySelector('button[name=save-eeprom]').addEventListener('click', async () => {
+	const promise = Promise.resolve()
+		.then(() => colorsCycleManager.upload())
+		.then(saveByValueSettings)
+		.then(saveMineralsPumpsSettings)
 		.then(() => fetch(`${baseHost}/saveEEPROM`))
-		.then(defaultSendRequestResponseHandler)
-		.catch(defaultSendRequestErrorHandler)
 	;
 	handleFetchResult(promise);
 });
@@ -456,9 +486,7 @@ document.querySelector('button[name=synchronize-time]').addEventListener('click'
 	const m = date.getMinutes();
 	const s = date.getSeconds();
 	const string = `${y}-${M>9?M:'0'+M}-${d>9?d:'0'+d}T${H>9?H:'0'+H}:${m>9?m:'0'+m}:${s>9?s:'0'+s}`;
-	handleFetchResult(
-		fetch(`${baseHost}/config?timestamp=${string}`)
-	)
+	handleFetchResult(fetch(`${baseHost}/config?timestamp=${string}`));
 });
 
 // Load settings
@@ -488,6 +516,29 @@ fetch(`${baseHost}/config`)
 					}
 					break;
 			}
+		}
+
+		// Mineral dosing fields
+		const mineralsGrid = document.querySelector('#minerals .grid');
+		const mineralsTemplate = document.querySelector('#minerals .grid template').content;
+		for (const mineral of minerals) {
+			const fragment = mineralsTemplate.cloneNode(true);
+			const key = mineral.key.toLowerCase();
+			fragment.querySelector('div.item').setAttribute('name', key);
+			fragment.querySelector('h3 abbr').innerText = mineral.key;
+			fragment.querySelector('h3 small').innerText = `(${mineral.name})`;
+			const minutes = state['mineralsPumps'][key]['time'];
+			fragment.querySelector('input[type=time]').value = [`${Math.floor(minutes / 60)}`, `${minutes % 60}:00`].map(p => p.padStart(2, '0')).join(':');
+			fragment.querySelector('input[type=number]').value = state['mineralsPumps'][key]['mL'];
+			fragment.querySelector('button').addEventListener('click', async () => {
+				await fetch(`${baseHost}/test?pump=${key}&action=on`);
+				alert(`Pompa włączona...`);
+				const stats = await fetch(`${baseHost}/test?pump=${key}&action=off`).then(r => r.json())
+				const pump = stats.mineralsPumps[key];
+				const duration = stats.currentTime - pump.lastStartTime;
+				alert(`Pompa wyłączona.\nCzas: ${duration}\nmL: ${pump.mL}`);
+			});
+			mineralsGrid.appendChild(fragment);
 		}
 	})
 	.catch((error) => {

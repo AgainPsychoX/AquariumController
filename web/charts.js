@@ -91,9 +91,9 @@
 		.attr("transform", `translate(${contentWidth},0)`)
 	;
 	main.lineGen = {};
-	main.lineGen.airTemperature = d3.line()
+	main.lineGen.rtcTemperature = d3.line()
 		.x((sample) => main.xScale.time(sample.time))
-		.y((sample) => main.yScale.temperature(sample.air))
+		.y((sample) => main.yScale.temperature(sample.rtc))
 	;
 	main.lineGen.waterTemperature = d3.line()
 		.x((sample) => main.xScale.time(sample.time))
@@ -104,7 +104,7 @@
 		.y((sample) => main.yScale.phLevel(sample.ph))
 	;
 	main.lineElem = {};
-	main.lineElem.airTemperature = main.chartElement.append("path").attr("class", "line line--airTemperature");
+	main.lineElem.rtcTemperature = main.chartElement.append("path").attr("class", "line line--rtcTemperature");
 	main.lineElem.waterTemperature = main.chartElement.append("path").attr("class", "line line--waterTemperature");
 	main.lineElem.phLevel = main.chartElement.append("path").attr("class", "line line--phLevel");
 
@@ -126,9 +126,9 @@
 		.attr("transform", `translate(0,${contentHeight2})`)
 	;
 	context.lineGen = {};
-	context.lineGen.airTemperature = d3.line()
+	context.lineGen.rtcTemperature = d3.line()
 		.x((sample) => context.xScale.time(sample.time))
-		.y((sample) => context.yScale.temperature(sample.air))
+		.y((sample) => context.yScale.temperature(sample.rtc))
 	;
 	context.lineGen.waterTemperature = d3.line()
 		.x((sample) => context.xScale.time(sample.time))
@@ -139,7 +139,7 @@
 		.y((sample) => context.yScale.phLevel(sample.ph))
 	;
 	context.lineElem = {};
-	context.lineElem.airTemperature = context.chartElement.append("path").attr("class", "line line--airTemperature");
+	context.lineElem.rtcTemperature = context.chartElement.append("path").attr("class", "line line--rtcTemperature");
 	context.lineElem.waterTemperature = context.chartElement.append("path").attr("class", "line line--waterTemperature");
 	context.lineElem.phLevel = context.chartElement.append("path").attr("class", "line line--phLevel");
 
@@ -181,7 +181,7 @@
 		tooltipElement.selectAll("*").remove();
 		tooltipElement.append("xhtml:html").html(`
 			<div class="text--waterTemperature">Temperatura wody: ${sample.water.toFixed(2)}°C</div>
-			<div class="text--airTemperature">Temperatura powietrza: ${sample.air.toFixed(2)}°C</div>
+			<div class="text--rtcTemperature">Temperatura układu: ${sample.rtc.toFixed(2)}°C</div>
 			<div class="text--phLevel">Poziom pH wody: ${sample.ph.toFixed(2)}</div>
 		`); 
 		hoverLineElement
@@ -207,7 +207,7 @@
 			if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'zoom') return;
 			const selection = lastSelection = d3.event.selection || context.xScale.time.range();
 			main.xScale.time.domain(selection.map(context.xScale.time.invert, context.xScale.time));
-			main.lineElem.airTemperature.attr("d", main.lineGen.airTemperature);
+			main.lineElem.rtcTemperature.attr("d", main.lineGen.rtcTemperature);
 			main.lineElem.waterTemperature.attr("d", main.lineGen.waterTemperature);
 			main.lineElem.phLevel.attr("d", main.lineGen.phLevel);
 			main.xAxisElem.time.call(main.xAxisGen.time);
@@ -226,7 +226,7 @@
 			if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'brush') return;
 			const transform = d3.event.transform;
 			main.xScale.time.domain(transform.rescaleX(context.xScale.time).domain());
-			main.lineElem.airTemperature.attr("d", main.lineGen.airTemperature);
+			main.lineElem.rtcTemperature.attr("d", main.lineGen.rtcTemperature);
 			main.lineElem.waterTemperature.attr("d", main.lineGen.waterTemperature);
 			main.lineElem.phLevel.attr("d", main.lineGen.phLevel);
 			main.xAxisElem.time.call(main.xAxisGen.time);
@@ -271,7 +271,7 @@
 			data.values.forEach((sample) => {
 				samples.push({
 					time: xlSerialToJsDate(sample[0]),
-					air: parseFloat(sample[2]),
+					rtc: parseFloat(sample[2]),
 					water: parseFloat(sample[3]),
 					ph: parseFloat(sample[4]),
 				});
@@ -279,8 +279,8 @@
 
 			main.xScale.time.domain(d3.extent(samples, (sample) => sample.time));
 			main.yScale.temperature.domain([
-				d3.min(samples, (sample) => Math.min(sample.air, sample.water)),
-				d3.max(samples, (sample) => Math.max(sample.air, sample.water)),
+				d3.min(samples, (sample) => Math.min(sample.rtc, sample.water)),
+				d3.max(samples, (sample) => Math.max(sample.rtc, sample.water)),
 			]).nice();
 			main.yScale.phLevel.domain([
 				d3.min(samples, (sample) => sample.ph),
@@ -290,7 +290,7 @@
 			context.yScale.temperature.domain(main.yScale.temperature.domain());
 			context.yScale.phLevel.domain(main.yScale.phLevel.domain());
 
-			main.lineElem.airTemperature.datum(samples).attr("d", main.lineGen.airTemperature);
+			main.lineElem.rtcTemperature.datum(samples).attr("d", main.lineGen.rtcTemperature);
 			main.lineElem.waterTemperature.datum(samples).attr("d", main.lineGen.waterTemperature);
 			main.lineElem.phLevel.datum(samples).attr("d", main.lineGen.phLevel);
 			main.xAxisElem.time.call(main.xAxisGen.time);
@@ -304,7 +304,7 @@
 					.tickFormat("")
 			);
 
-			context.lineElem.airTemperature.datum(samples).attr("d", context.lineGen.airTemperature);
+			context.lineElem.rtcTemperature.datum(samples).attr("d", context.lineGen.rtcTemperature);
 			context.lineElem.waterTemperature.datum(samples).attr("d", context.lineGen.waterTemperature);
 			context.lineElem.phLevel.datum(samples).attr("d", context.lineGen.phLevel);
 			context.xAxisElem.time.call(context.xAxisGen.time);

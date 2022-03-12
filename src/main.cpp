@@ -10,10 +10,11 @@ const char* password = "kamildanielpatryk";
 
 // Debugowanie
 #define DEBUG 1
-#define DEBUG_PWM_SMOOTH_TIMED_CONTROLLER 2
-#define DEBUG_HEATING_CONTROLLER 2
-#define DEBUG_CIRCULATOR_CONTROLLER 2
-#define DEBUG_CLOUD_LOGGER 2
+#define DEBUG_PWM_SMOOTH_TIMED_CONTROLLER 0
+#define DEBUG_HEATING_CONTROLLER 0
+#define DEBUG_CIRCULATOR_CONTROLLER 0
+#define DEBUG_MINERALS_PUMPS_CONTROLLER 2
+#define DEBUG_CLOUD_LOGGER 0
 
 ////////////////////////////////////////////////////////////////////////////////
 #include <ESP8266WiFi.h>
@@ -48,6 +49,7 @@ float waterTemperature = 0; // Noise reduction
 #include "HeatingController.hpp"
 #include "CirculatorController.hpp"
 #include "CloudLogger.hpp"
+#include "MineralsPumpsController.hpp"
 
 bool showIP = true;
 constexpr unsigned int showIPtimeout = 15000;
@@ -55,15 +57,15 @@ constexpr unsigned int showIPtimeout = 15000;
 ////////////////////////////////////////////////////////////////////////////////
 
 void setup() {
-	// Initialize Serial console
-	Serial.begin(115200);
-
 	// Initialize I2C Wire protocol
 	Wire.begin();
 
-	// Initialize I/O extender
-	ioExpander.state = 0b00001111;
+	// Initialize I/O extender, making sure everything is off on start.
+	ioExpander.state = 0b00111111;
 	ioExpander.write();
+
+	// Initialize Serial console
+	Serial.begin(115200);
 
 	// Initialize RTC
 	{
@@ -157,7 +159,7 @@ void setup() {
 			response, buffLen,
 			"{"
 				"\"waterTemperature\":%.2f,"
-				"\"airTemperature\":%.2f,"
+				"\"rtcTemperature\":%.2f,"
 				"\"phLevel\":%.2f,"
 				"\"red\":%d,\"green\":%d,\"blue\":%d,\"white\":%d,"
 				"\"isHeating\":%d,"
@@ -267,7 +269,66 @@ void setup() {
 			}
 		}
 
+		// Handle minerals pumps config
+		{
+			using namespace MineralsPumpsController;
+			bool changes = false;
+
+			const String& ca_time = server.arg("mineralsPumps.ca.time");
+			if (!ca_time.isEmpty()) {
+				unsigned short time = atoi(ca_time.c_str());
+				pumps[Mineral::Ca].settings.hour   = time / 60;
+				pumps[Mineral::Ca].settings.minute = time % 60;
+				changes = true;
+			}
+			const String& ca_ml = server.arg("mineralsPumps.ca.mL");
+			if (!ca_ml.isEmpty()) {
+				uint8_t mL = atoi(ca_ml.c_str());
+				pumps[Mineral::Ca].setMilliliters(mL);
+				changes = true;
+			}
+
+			const String& mg_time = server.arg("mineralsPumps.mg.time");
+			if (!mg_time.isEmpty()) {
+				unsigned short time = atoi(mg_time.c_str());
+				pumps[Mineral::Mg].settings.hour   = time / 60;
+				pumps[Mineral::Mg].settings.minute = time % 60;
+				changes = true;
+			}
+			const String& mg_ml = server.arg("mineralsPumps.mg.mL");
+			if (!mg_ml.isEmpty()) {
+				uint8_t mL = atoi(mg_ml.c_str());
+				pumps[Mineral::Mg].setMilliliters(mL);
+				changes = true;
+			}
+
+			const String& kh_time = server.arg("mineralsPumps.kh.time");
+			if (!kh_time.isEmpty()) {
+				unsigned short time = atoi(kh_time.c_str());
+				pumps[Mineral::KH].settings.hour   = time / 60;
+				pumps[Mineral::KH].settings.minute = time % 60;
+				changes = true;
+			}
+			const String& kh_ml = server.arg("mineralsPumps.kh.mL");
+			if (!kh_ml.isEmpty()) {
+				uint8_t mL = atoi(kh_ml.c_str());
+				pumps[Mineral::KH].setMilliliters(mL);
+				changes = true;
+			}
+
+			if (changes) {
+				MineralsPumpsController::saveSettings();
+#if DEBUG_MINERALS_PUMPS_CONTROLLER >= 1
+				MineralsPumpsController::printOut();
+#endif
+			}
+		}
+
 		// Response with current config
+		const auto& pump_ca = MineralsPumpsController::pumps[MineralsPumpsController::Mineral::Ca];
+		const auto& pump_mg = MineralsPumpsController::pumps[MineralsPumpsController::Mineral::Mg];
+		const auto& pump_kh = MineralsPumpsController::pumps[MineralsPumpsController::Mineral::KH];
+
 		constexpr unsigned int buffLen = 256;
 		char response[buffLen];
 		int ret = snprintf(
@@ -277,18 +338,28 @@ void setup() {
 				"\"heatingMaxTemperature\":%.2f,"
 				"\"circulatorActiveTime\":%u,"
 				"\"circulatorPauseTime\":%u,"
-				"\"cloudLoggingInterval\":%u"
+				"\"cloudLoggingInterval\":%u,"
+				"\"mineralsPumps\":{"
+					"\"ca\":{\"time\":%u,\"mL\":%u},"
+					"\"mg\":{\"time\":%u,\"mL\":%u},"
+					"\"kh\":{\"time\":%u,\"mL\":%u}"
+				"}"
 			"}",
 			HeatingController::minTemperature,
 			HeatingController::maxTemperature,
 			CirculatorController::activeSeconds,
 			CirculatorController::pauseSeconds,
-			static_cast<unsigned int>(CloudLogger::interval / 1000)
+			static_cast<unsigned int>(CloudLogger::interval / 1000),
+			(pump_ca.settings.hour * 60) + pump_ca.settings.minute, pump_ca.getMilliliters(),
+			(pump_mg.settings.hour * 60) + pump_mg.settings.minute, pump_mg.getMilliliters(),
+			(pump_kh.settings.hour * 60) + pump_kh.settings.minute, pump_kh.getMilliliters()
 		);
 		if (ret < 0 || static_cast<unsigned int>(ret) >= buffLen) {
 			server.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
 		}
-		server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
+		else {
+			server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
+		}
 
 		// As somebody connected, remove flag
 		if (showIP) {
@@ -306,6 +377,60 @@ void setup() {
 	//     }
 	//     server.send(200);
 	// });
+	server.on("/test", []() {
+		constexpr unsigned int buffLen = 256;
+		char response[buffLen];
+
+		// Minerals pumps testing
+		{
+			using namespace MineralsPumpsController;
+			const String& pump = server.arg("pump");
+			if (!pump.isEmpty()) {
+				const String& action = server.arg("action");
+				bool active = action.equals("on");
+				bool set = active || action.equals("off");
+				if (set) {
+					if (pump.equals("ca")) {
+						pumps[Mineral::Ca].manual = active;
+						pumps[Mineral::Ca].set(active);
+					}
+					else if (pump.equals("mg")) {
+						pumps[Mineral::Ca].manual = active;
+						pumps[Mineral::Mg].set(active);
+					}
+					else if (pump.equals("kh")) {
+						pumps[Mineral::Ca].manual = active;
+						pumps[Mineral::KH].set(active);
+					}
+				}
+				const unsigned long currentMillis = millis();
+				int ret = snprintf(
+					response, buffLen,
+					"{"
+						"\"currentTime\":%lu,"
+						"\"mineralsPumps\":{"
+							"\"ca\":{\"lastStartTime\":%lu,\"mL\":%.4f},"
+							"\"mg\":{\"lastStartTime\":%lu,\"mL\":%.4f},"
+							"\"kh\":{\"lastStartTime\":%lu,\"mL\":%.4f}"
+						"}"
+					"}",
+					currentMillis,
+					pumps[Mineral::Ca].lastStartTime, pumps[Mineral::Ca].getMillilitersForDuration(currentMillis - pumps[Mineral::Ca].lastStartTime),
+					pumps[Mineral::Mg].lastStartTime, pumps[Mineral::Mg].getMillilitersForDuration(currentMillis - pumps[Mineral::Mg].lastStartTime),
+					pumps[Mineral::KH].lastStartTime, pumps[Mineral::KH].getMillilitersForDuration(currentMillis - pumps[Mineral::KH].lastStartTime)
+				);
+				if (ret < 0 || static_cast<unsigned int>(ret) >= buffLen) {
+					server.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
+				}
+				else {
+					server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
+				}
+				return;
+			}
+		}
+
+		server.send(200);
+	});
 	server.on("/saveEEPROM", []() {
 		EEPROM.commit();
 		server.send(200);
@@ -341,6 +466,9 @@ void setup() {
 	// Initialize water heating controller
 	CirculatorController::setup();
 
+	// Initialize minerals pumps controller
+	MineralsPumpsController::setup();
+
 	// Initialize cloud logger service
 	CloudLogger::setup();
 }
@@ -357,13 +485,15 @@ void setup() {
 void loop() {
 	unsigned long currentMillis = millis();
 
+	MineralsPumpsController::update();
+
 	server.handleClient();
 
-	if (CloudLogger::isEnabled()) {
+	if (CloudLogger::isEnabled() && !MineralsPumpsController::pumping) {
 		UPDATE_EVERY(CloudLogger::interval) {
 			CloudLogger::push({
 				.waterTemperature = waterTemperature,
-				.airTemperature = ds3231.getTemperature(),
+				.rtcTemperature = ds3231.getTemperature(),
 				.phLevel = 7.11f
 			});
 		}
@@ -426,10 +556,11 @@ void loop() {
 			lcd.write('C');
 		}
 
-		// Show only IP in second row
+		lcd.setCursor(0, 1);
 		if (showIP) {
+			// Show only IP in second row
 			lcd.setCursor(0, 1);
-			lcd.print("IP: ");
+			lcd.print(F("IP: "));
 			lcd.print(WiFi.localIP().toString().c_str());
 			if (millis() > showIPtimeout) {
 				showIP = false;
@@ -437,15 +568,31 @@ void loop() {
 			}
 		}
 		else {
-			// Show status for refilling and heating
-			lcd.setCursor(20 - 4, 1);
-			if (waterLevelBackupTankLow && (millis() % 2000 > 1000)) {
-				lcd.print("  ");
+			// Show message
+			using namespace MineralsPumpsController;
+			if (MineralsPumpsController::pumping) {
+				lcd.print(F("Dozowanie "));
+				switch (MineralsPumpsController::which) {
+					case Mineral::Ca:	lcd.print(F("Ca... "));	break;
+					case Mineral::Mg:	lcd.print(F("Mg... "));	break;
+					case Mineral::KH:	lcd.print(F("KH... "));	break;
+					default: break;
+				}
+			}
+			else if (waterLevelBackupTankLow) {
+				lcd.print(F("Niski poziom RO!"));
+			}
+			else if (waterLevelRefillingRequired) {
+				lcd.print(F("Dolewanie RO..."));
 			}
 			else {
-				lcd.print(waterLevelRefillingRequired ? "RO" : "  ");
+				lcd.print(F("                "));
 			}
-			lcd.write(' ');
+
+			//lcd.setCursor(20 - 1, 1);
+			lcd.print("   ");
+
+			// Show heating status
 			lcd.write(HeatingController::isHeating() ? 'G' : ' '); // G - Grzałka
 		}
 	}

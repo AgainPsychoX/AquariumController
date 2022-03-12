@@ -41,12 +41,12 @@
 					</div>
 					<div class="subgrid columns-70-30" style="width: 250px;">
 						<label>
-							<span>Temperatura wody:</span>
-							<output name="waterTemperature"></output>
+							<span>Temperatura układu:</span>
+							<output name="rtcTemperature"></output>
 						</label>
 						<label>
-							<span>Temperatura powietrza:</span>
-							<output name="airTemperature"></output>
+							<span>Temperatura wody:</span>
+							<output name="waterTemperature"></output>
 						</label>
 						<label>
 							<span>Grzałka akwarium:</span>
@@ -73,11 +73,11 @@
 				<div class="header-with-aside">
 					<h2>Ustawienia kolorów oświetlenia</h2>
 					<div class="flex-center small spaced">
-						<label title="Jeśli zaznaczone, pozwala na podgląd poprzez ustawienie kolorów do wartości suwaków (cykl ignorowany).">
-							<input type="checkbox" name="preview">
-							<span>Podgląd</span>
+						<label>
+							<input type="checkbox" name="manual">
+							<span>Manualne ustawienie</span>
 						</label>
-						<label title="Jeśli zaznaczone, wymusza podgląd na 3 sekundy po próbie zmiany suwaków.">
+						<label title="Jeśli zaznaczone, wymusza podgląd na 5 sekund po próbie zmiany suwaków." style="display: none;">
 							<input type="checkbox" name="previewOnChange" checked>
 							<span>Podgląd przy zmianie</span>
 						</label>
@@ -134,7 +134,7 @@
 									<td><button name="move-up" title="Przesuń wpis do góry">↑</button></td>
 									<td><button name="move-down" title="Przesuń wpis w dół">↓</button></td>
 									<td><button name="clone" title="Sklonuj wpis">📋</button></td>
-									<td><input type="time" value="12:00" /></td>
+									<td><input type="time" step="60" value="12:00" /></td>
 									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="red" /></td>
 									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="green" /></td>
 									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="blue" /></td>
@@ -181,6 +181,26 @@
 					</label>
 				</div>
 			</section>
+			<section id="minerals">
+				<h2>Ustawienia dozowania mikroelementów (balling)</h2>
+				<div class="grid">
+					<template>
+						<div class="item spaced">
+							<h3><abbr>XD</abbr> <small></small></h3>
+							<label>
+								<span>Godzina:</span>
+								<input type="time" step="60" value="12:00">
+							</label>
+							<label>
+								<span>Dawka:</span>
+								<input type="number" min="0" max="250" step="1" value="50">
+								<span>mL</span>
+							</label>
+							<button name="manual">Włącz pompkę manualnie</button>
+						</div>
+					</template>
+				</div>
+			</section>
 			<section id="other">
 				<h2>Inne ustawienia</h2>
 				<div class="flex-evenly spaced">
@@ -199,7 +219,7 @@
 			</section>
 			<section id="charts">
 				<div class="header-with-aside">
-					<h2>Wykres historyczny</h2>
+					<h2>Wykres</h2>
 					<div class="flex-center small spaced">
 						<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 60 * 60 * 1000), new Date())">Pokaż ostatnią godzinę</a>
 						<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 24 * 60 * 60 * 1000), new Date())">Pokaż ostatnią dobę</a>

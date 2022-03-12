@@ -15,6 +15,9 @@
 		"*.log": "vt100",
 		"cstddef": "cpp",
 		"memory": "cpp",
-		"new": "cpp"
+		"new": "cpp",
+		"*.tcc": "cpp",
+		"ostream": "cpp",
+		"streambuf": "cpp"
 	}
 }

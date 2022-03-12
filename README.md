@@ -9,6 +9,7 @@
 + Water conditioner, with heating controller by thermometer.
 + Water level detection and refilling.
 + Simple circulator controller (periodical)
++ Dosing minerals/micro-elements with pumps.
 + Water pH (acidity/basicity) meter.
 + Cloud logging of various parameters.
 + Most of UI uses Polish language.
@@ -70,12 +71,43 @@ Hardware consists of:
 |-----|---------|------------------------------------|-------------------------|
 | 0   | Output  | Heating                            | `LOW` if heating.       |
 | 1   | Output  | Water refilling                    | `LOW` if refilling.     |
-| 2   | ?       | ?                                  | Free.                   |
+| 2   | Output  | Minerals pump - Ca                 | `LOW` when pumping.     |
 | 3   | Output  | Water circulator                   | `LOW` when active.      |
-| 4   | ?       | ?                                  | Free.                   |
-| 5   | ?       | ?                                  | Free.                   |
+| 4   | Output  | Minerals pump - KH                 | `LOW` when pumping.     |
+| 5   | Output  | Minerals pump - Mg                 | `LOW` when pumping.     |
 | 6   | Input   | Water level detection              | `LOW` if low level.     |
 | 7   | Input   | Backup water tank level detection  | `LOW` if low level.     |
+
+
+
+### LCD
+
+* While connecting to Wi-Fi:
+
+	```
+	.--------------------.
+	|SSID: AAAAAAAAAAAAAA| <-- SSID being displayed.
+	|IP: * - * - * - * - | <-- IP is not know yet, animation is displayed.
+	'--------------------'
+	```
+
+* After connected, until IP showing timeout or anyone connected to web portal:
+
+	```
+	.--------------------.
+	|HH:mm:ss      TT.T^C| <-- Time and water temperature.
+	|IP:  AAA.BBB.CCC.DDD| <-- IP used by the controller.
+	'--------------------'
+	```
+
+* Running:
+
+	```
+	.--------------------.
+	|HH:mm:ss      TT.T^C| <-- Time and water temperature.
+	|Message here...    G| <-- Custom message (like pumping in progress) and 'G' set or hidden whenever heating is on.
+	'--------------------'
+	```
 
 
 
@@ -139,6 +171,17 @@ Size: `0x1000` (4kB)
 
 	It means there are `14` customizable entries.
 
+* `0x200` - `0x218` - minerals pumps settings:
+
+	Format:
+	* 4 bytes - calibration float.
+	* 1 byte - hour number (pump disabled if outside of 0-24).
+	* 1 byte - minute number.
+	* 1 byte - millimeters dose (so max dose is 250-255mL).
+	* 1 byte padding (to round up at 8 bytes).
+
+	Three pumps, total of 24 bytes.
+
 #### Cloud logger
 
 There is HTTPS client running every configured interval sending the request with readings sample to endpoint. As the endpoint, [Google Apps Script with `POST` handler](https://script.google.com/d/1MDprbKPWUi1Kno0x6o2YVEOm3dEMGe_TI3PfwGwiD1rW21l4PcxbYVoA/edit?usp=sharing) is used. Data is stored into [Google Spreadsheet document](https://docs.google.com/spreadsheets/d/1OeXW_dhXnBcgqe8lflZT3rbdBoCy9qz3bURGQ95YH9o/edit?usp=sharing#gid=581325308). 
@@ -149,27 +192,27 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ Chart link/button for last hour/day should show error if no data to show.
-+ Add loading/error information for line charts.
-+ Store Wi-Fi settings (SSID/password) in EEPROM. 
++ Make `/config` use POST for upload, GET for reading, with nicer JSON structure.
++ Write web API docs.
 + Use SSL sessions (to avoid partially lag of cloud logger).
 	
 	See https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/bearssl-client-secure-class.html?highlight=WiFiClientSecure
 
++ Refactor files into multiple `.cpp` (to avoid recompiling everything every time).
++ Use some macro for logging instead of multiple `#if`?.
++ Minerals pumps calibration with EEPROM saving.
++ Store Wi-Fi settings (SSID/password) in EEPROM. 
++ Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
 + Cloud logger buffer (configurable; in such case charts could get data from status too?).
 + Store cloud logger settings in EEPROM (incl. URL and fingerprint).
 + Add security token to cloud communication.
++ Include cloud endpoint code (Google App Scripts) here.
 + Fit colors cycle configuration on mobile nicely, somehow.
-+ Elements dosing pumps controller.
-	- C++ (store mili-liters and interval, static calibration).
-	- Web (3 elements = 3 mL + 3 time inputs).
-	- Custom one time dosage button.
 + Circulator force run button.
-+ Include electronic board schema in docs.
 + Show total running time (from last power-on), under current time at web portal.
++ Chart link/button for last hour/day should show error if no data to show.
++ Add loading/error information for line charts.
 + Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
-+ Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
-+ Use some macro for logging instead of multiple `#if`?.
 + Use `snprintf_P` in place of `snprintf`.
 + Proper seeding code, incl. WiFi.
 + Add recessiveness to `prepareWebArduino`.
