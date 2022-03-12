@@ -13,9 +13,9 @@
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	var svg = d3.select("svg#chart");
+	const svg = d3.select("svg#chart");
 	const boundingRect = svg.node().getBoundingClientRect();
-	var totalHeight = 0;
+	let totalHeight = 0;
 
 	const padding1 = {top: 15, right: 40, bottom: 15, left: 40};
 	const padding2 = {top: 15, right: 40, bottom: 30, left: 40};
@@ -44,7 +44,7 @@
 			: d3.timeFormat("%Y")
 		)(date);
 
-	var clip = svg.append("defs").append("svg:clipPath")
+	const clip = svg.append("defs").append("svg:clipPath")
 		.attr("id", "mainChartClip")
 		.append("svg:rect")
 		.attr("width", contentWidth)
@@ -53,7 +53,7 @@
 		.attr("y", 0)
 	;
 
-	var main = {};
+	const main = {};
 	main.gridElement = svg.append("g")
 		.attr("class", "grid")
 		.attr("transform", `translate(${position1.left},${position1.top})`)
@@ -108,7 +108,7 @@
 	main.lineElem.waterTemperature = main.chartElement.append("path").attr("class", "line line--waterTemperature");
 	main.lineElem.phLevel = main.chartElement.append("path").attr("class", "line line--phLevel");
 
-	var context = {};
+	const context = {};
 	context.chartElement = svg.append("g")
 		.attr("class", "context")
 		.attr("transform", `translate(${position2.left},${position2.top})`)
@@ -143,21 +143,21 @@
 	context.lineElem.waterTemperature = context.chartElement.append("path").attr("class", "line line--waterTemperature");
 	context.lineElem.phLevel = context.chartElement.append("path").attr("class", "line line--phLevel");
 
-	var brushElement = context.chartElement.append("g").attr("class", "brush");
+	const brushElement = context.chartElement.append("g").attr("class", "brush");
 
-	var mainAreaRect = svg.append("rect")
+	const mainAreaRect = svg.append("rect")
 		.attr("class", "zoom")
 		.attr("width", contentWidth)
 		.attr("height", contentHeight1)
 		.attr("transform", "translate(" + position1.left + "," + position1.top + ")")
 	;
 
-	var tooltipElement = main.chartElement.append("foreignObject")
+	const tooltipElement = main.chartElement.append("foreignObject")
 		.attr("class", "tooltip")
 		.attr("width", 240)
 		.attr("height", 80)
 	;
-	var hoverLineElement = main.chartElement.append("line")
+	const hoverLineElement = main.chartElement.append("line")
 		.attr("class", "hoverLine")
 	;
 
@@ -199,9 +199,9 @@
 
 	////////////////////////////////////////////////////////////////////////////////
 
-	var lastSelection;
+	let lastSelection;
 
-	var brush = d3.brushX()
+	const brush = d3.brushX()
 		.extent([[0, 0], [contentWidth, contentHeight2]])
 		.on("brush end", () => {
 			if (d3.event.sourceEvent && d3.event.sourceEvent.type === 'zoom') return;
@@ -218,7 +218,7 @@
 		})
 	;
 
-	var zoom = d3.zoom()
+	const zoom = d3.zoom()
 		.scaleExtent([1, Infinity])
 		.translateExtent([[0, 0], [contentWidth, contentHeight1]])
 		.extent([[0, 0], [contentWidth, contentHeight1]])
@@ -241,8 +241,8 @@
 		// From https://stackoverflow.com/a/22352911/4880243
 		return new Date(Math.round((((xlSerial - 25569) * 24 * 60) + new Date().getTimezoneOffset()) * 60 * 1000))
 	};
-	var updating = false;
-	var samples = [];
+	let updating = false;
+	const samples = [];
 	const updateChart = async () => {
 		if (updating) return;
 		try {
@@ -251,7 +251,7 @@
 			const data = await fetch(feedURL)
 				.then(async (response) => {
 					if (!response.ok) {
-						var error;
+						let error;
 						try {
 							error = JSON.parse(await response.text()).error;
 						}
@@ -264,6 +264,10 @@
 				})
 			;
 
+			if (!data.values || data.values.length == 0) {
+				console.warn("No any new records, logging is disabled, controller is offline or something went wrong...");
+				return;
+			}
 			data.values.forEach((sample) => {
 				samples.push({
 					time: xlSerialToJsDate(sample[0]),
@@ -285,7 +289,7 @@
 			context.xScale.time.domain(main.xScale.time.domain());
 			context.yScale.temperature.domain(main.yScale.temperature.domain());
 			context.yScale.phLevel.domain(main.yScale.phLevel.domain());
-			
+
 			main.lineElem.airTemperature.datum(samples).attr("d", main.lineGen.airTemperature);
 			main.lineElem.waterTemperature.datum(samples).attr("d", main.lineGen.waterTemperature);
 			main.lineElem.phLevel.datum(samples).attr("d", main.lineGen.phLevel);
@@ -322,11 +326,11 @@
 	await updateChart();
 
 	// Register update on 'Space' key press
-	var timeout;
+	let timeout;
 	window.addEventListener('keypress', (e) => {
 		if (e.key !== ' ') return;
 		clearTimeout(timeout);
-		setTimeout(updateChart, 1000);
+		timeout = setTimeout(updateChart, 500);
 	});
 
 	// Expose to global

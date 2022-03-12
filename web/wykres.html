@@ -2,62 +2,14 @@
 <html>
 <head>
 	<meta charset="utf-8">
+	<title>Wykres</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="style.css" type="text/css">
 	<style>
-html, body {
-	height: 100%;
-	margin: 0;
-	font-family: 'Segoe UI';
-}
-svg#chart .line {
-	fill: none;
-	stroke-width: 1.5px;
-	stroke: DodgerBlue;
-}
-svg#chart .line--airTemperature {
-	stroke: GoldenRod;
-}
-svg#chart .line--waterTemperature {
-	stroke: FireBrick;
-}
-svg#chart .line--phLevel {
-	stroke: ForestGreen;
-}
-svg#chart .zoom {
-	cursor: move;
-	fill: none;
-	pointer-events: all;
-}
-svg#chart .grid line {
-	stroke-width: 1.0px;
-	stroke: gray;
-}
-svg#chart .tooltip {
-	stroke-width: 2.5px;
-	stroke: none;
-}
-svg#chart .hoverLine {
-	stroke-width: 2.5px;
-	stroke: none;
-}
-svg#chart .hoverLine.show {
-	stroke: gray;
-}
-svg#chart .tooltip body {
-	height: auto;
-	padding: 8px;
-	background: #87CEEB40;
-	font-size: small;
-	font-weight: bold;
-}
-svg#chart .tooltip .text--airTemperature {
-	color: GoldenRod;
-}
-svg#chart .tooltip .text--waterTemperature {
-	color: FireBrick;
-}
-svg#chart .tooltip .text--phLevel {
-	color: ForestGreen;
-}
+		html, body {
+			background: snow;
+			height: 100%;
+		}
 	</style>
 </head>
 <body>
