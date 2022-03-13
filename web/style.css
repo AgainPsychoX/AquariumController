@@ -39,6 +39,8 @@ label {
 }
 label span {
 	margin: 0 2px;
+	margin-right: 4px;
+	text-align: end;
 }
 
 .small {
@@ -107,9 +109,9 @@ section {
 .nice-container {
 	width: 100%;
 }
-@media (min-width: 800px) {
+@media (min-width: calc(960px - 32px)) {
 	.nice-container {
-		width: 800px;
+		width: 864px;
 		margin-left: auto;
 		margin-right: auto;
 	}
@@ -184,9 +186,6 @@ section {
 	grid-template-columns: auto 1fr;
 	align-items: center;
 }
-#status .grid span {
-	margin-right: 4px;
-}
 #status .grid output {
 	text-align: start;
 	font-size: large;
@@ -209,9 +208,14 @@ output.error {
 	color: FireBrick;
 }
 
-output[name=waterLevel], 
-output[name=refillTankLevel] {
-	font-size: small;
+output[name=heating] {
+	color: SteelBlue;
+}
+output[name=heating].active {
+	color: OrangeRed;
+}
+output[name=waterLevel].active {
+	color: RoyalBlue;
 }
 
 
@@ -309,6 +313,16 @@ output[name=refillTankLevel] {
 }
 #minerals .grid .item input[type=number] {
 	width: 48px;
+}
+#minerals .grid .item label {
+	display: grid;
+	grid-template-columns: 64px auto auto;
+	align-items: center;
+}
+@media (max-width: 540px) { 
+	#minerals .grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 

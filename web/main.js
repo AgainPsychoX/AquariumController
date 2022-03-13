@@ -317,6 +317,12 @@ document.querySelector('#colors button[name=reset]').addEventListener('click', (
 ////////////////////////////////////////////////////////////////////////////////
 // Status
 
+const booleanStatusBits = [
+	{key: 'isHeating',       output: 'heating',         true: '🔥↗', false: '❄↘'},
+	{key: 'isRefilling',     output: 'waterLevel',      true: '💧💦↗', false: 'OK'},
+	{key: 'isRefillTankLow', output: 'refillTankLevel', true: 'Niski', false: 'OK'},
+];
+
 // Status updating
 (async () => {
 	let lastPing = 0;
@@ -361,15 +367,15 @@ document.querySelector('#colors button[name=reset]').addEventListener('click', (
 								colorsInputs[key].value = colorsSliders[key].value = value;
 							}
 							break;
-						case 'isHeating':
-							document.querySelector(`output[name=heating]`).value = value ? '🔥↗' : '❄↘';
-							break;
-						case 'isRefilling':
-							document.querySelector(`output[name=waterLevel]`).value = value ? '💧💦↗' : 'OK';
-							break;
-						case 'isRefillTankLow':
-							document.querySelector('output[name=refillTankLevel]').value = value ? 'Niski' : 'OK';
-							break;
+					}
+				}
+
+				for (const entry of booleanStatusBits) {
+					if (typeof state[entry.key] != undefined) {
+						const value = !!state[entry.key];
+						const output = document.querySelector(`output[name=${entry.output}]`);
+						output.value = entry[value];
+						output.classList.toggle('active', value);
 					}
 				}
 
@@ -466,6 +472,7 @@ function saveMineralsPumpsSettings() {
 	}).join('&');
 	return fetch(`${baseHost}/config?${querystring}`);
 }
+const debouncedSaveMineralsPumpsSettings = debounce(saveMineralsPumpsSettings, 1000);
 
 document.querySelector('button[name=save-eeprom]').addEventListener('click', async () => {
 	const promise = Promise.resolve()
@@ -528,16 +535,49 @@ fetch(`${baseHost}/config`)
 			fragment.querySelector('h3 abbr').innerText = mineral.key;
 			fragment.querySelector('h3 small').innerText = `(${mineral.name})`;
 			const minutes = state['mineralsPumps'][key]['time'];
-			fragment.querySelector('input[type=time]').value = [`${Math.floor(minutes / 60)}`, `${minutes % 60}:00`].map(p => p.padStart(2, '0')).join(':');
-			fragment.querySelector('input[type=number]').value = state['mineralsPumps'][key]['mL'];
-			fragment.querySelector('button').addEventListener('click', async () => {
+			const timeInput   = fragment.querySelector('input[type=time]');
+			const numberInput = fragment.querySelector('input[type=number]');
+			timeInput.value = [`${Math.floor(minutes / 60)}`, `${minutes % 60}:00`].map(p => p.padStart(2, '0')).join(':');
+			numberInput.value = state['mineralsPumps'][key]['mL'];
+			[timeInput, numberInput].forEach(input => input.addEventListener('change', () => {
+				debouncedSaveMineralsPumpsSettings();
+			}));
+
+			const manualDoseButton = fragment.querySelector('button[name=manual-dose]');
+			manualDoseButton.addEventListener('click', async () => {
+				manualDoseButton.disabled = true;
+				await saveMineralsPumpsSettings();
+				await fetch(`${baseHost}/test?pump=${key}&action=dose`);
+				setTimeout(() => {
+					manualDoseButton.disabled = false;
+				}, 5000);
+			});
+
+			const calibrateButton = fragment.querySelector('button[name=calibrate]');
+			calibrateButton.addEventListener('click', async () => {
+				calibrateButton.disabled = true;
+				const mL = parseInt(prompt("Podaj ilość mililitrów. Po zatwierdzeniu rozpocznie się pompowanie.", 1000));
+				if (isNaN(mL)) {
+					calibrateButton.disabled = false;
+					return;
+				}
+
 				await fetch(`${baseHost}/test?pump=${key}&action=on`);
-				alert(`Pompa włączona...`);
-				const stats = await fetch(`${baseHost}/test?pump=${key}&action=off`).then(r => r.json())
+
+				alert("Pompowanie trwa. Kliknij OK po przepompowaniu wyznaczonej ilości.");
+
+				const stats = await fetch(`${baseHost}/test?pump=${key}&action=off`).then(r => r.json());
 				const pump = stats.mineralsPumps[key];
 				const duration = stats.currentTime - pump.lastStartTime;
-				alert(`Pompa wyłączona.\nCzas: ${duration}\nmL: ${pump.mL}`);
+				const c = duration / mL;
+				
+				if (confirm(`Pompa wyłączona.\nCzas: ${duration}\nmL: ${mL}\nStała kalibracji: ${c} (czas w ms dla 1 mL)\n\nZapisać?`)) {
+					handleFetchResult(fetch(`${baseHost}/config?mineralsPumps.${key}.c=${c}`));
+				}
+				
+				calibrateButton.disabled = false;
 			});
+
 			mineralsGrid.appendChild(fragment);
 		}
 	})

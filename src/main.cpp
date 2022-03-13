@@ -274,46 +274,50 @@ void setup() {
 			using namespace MineralsPumpsController;
 			bool changes = false;
 
-			const String& ca_time = server.arg("mineralsPumps.ca.time");
-			if (!ca_time.isEmpty()) {
-				unsigned short time = atoi(ca_time.c_str());
-				pumps[Mineral::Ca].settings.hour   = time / 60;
-				pumps[Mineral::Ca].settings.minute = time % 60;
-				changes = true;
-			}
-			const String& ca_ml = server.arg("mineralsPumps.ca.mL");
-			if (!ca_ml.isEmpty()) {
-				uint8_t mL = atoi(ca_ml.c_str());
-				pumps[Mineral::Ca].setMilliliters(mL);
-				changes = true;
+			String arg;
+			arg.reserve(24);
+			arg = F("mineralsPumps.ca.time");
+			constexpr uint8_t keyOffset = 14;
+
+			for (uint8_t i = 0; i < Mineral::Count; i++) {
+				const char* key = pumpsKeys[i];
+				arg[keyOffset + 0] = key[0];
+				arg[keyOffset + 1] = key[1];
+				const String& value = server.arg(arg);
+				if (!value.isEmpty()) {
+					const unsigned short time = atoi(value.c_str());
+					pumps[i].settings.hour   = time / 60;
+					pumps[i].settings.minute = time % 60;
+					changes = true;
+				}
 			}
 
-			const String& mg_time = server.arg("mineralsPumps.mg.time");
-			if (!mg_time.isEmpty()) {
-				unsigned short time = atoi(mg_time.c_str());
-				pumps[Mineral::Mg].settings.hour   = time / 60;
-				pumps[Mineral::Mg].settings.minute = time % 60;
-				changes = true;
-			}
-			const String& mg_ml = server.arg("mineralsPumps.mg.mL");
-			if (!mg_ml.isEmpty()) {
-				uint8_t mL = atoi(mg_ml.c_str());
-				pumps[Mineral::Mg].setMilliliters(mL);
-				changes = true;
+			arg.replace(F(".time"), F(".mL"));
+
+			for (uint8_t i = 0; i < Mineral::Count; i++) {
+				const char* key = pumpsKeys[i];
+				arg[keyOffset + 0] = key[0];
+				arg[keyOffset + 1] = key[1];
+				const String& value = server.arg(arg);
+				if (!value.isEmpty()) {
+					const uint8_t mL = atoi(value.c_str());
+					pumps[i].setMilliliters(mL);
+					changes = true;
+				}
 			}
 
-			const String& kh_time = server.arg("mineralsPumps.kh.time");
-			if (!kh_time.isEmpty()) {
-				unsigned short time = atoi(kh_time.c_str());
-				pumps[Mineral::KH].settings.hour   = time / 60;
-				pumps[Mineral::KH].settings.minute = time % 60;
-				changes = true;
-			}
-			const String& kh_ml = server.arg("mineralsPumps.kh.mL");
-			if (!kh_ml.isEmpty()) {
-				uint8_t mL = atoi(kh_ml.c_str());
-				pumps[Mineral::KH].setMilliliters(mL);
-				changes = true;
+			arg.replace(F(".mL"), F(".c"));
+
+			for (uint8_t i = 0; i < Mineral::Count; i++) {
+				const char* key = pumpsKeys[i];
+				arg[keyOffset + 0] = key[0];
+				arg[keyOffset + 1] = key[1];
+				const String& value = server.arg(arg);
+				if (!value.isEmpty()) {
+					const float c = atof(value.c_str());
+					pumps[i].setCalibration(c);
+					changes = true;
+				}
 			}
 
 			if (changes) {
@@ -387,37 +391,35 @@ void setup() {
 			const String& pump = server.arg("pump");
 			if (!pump.isEmpty()) {
 				const String& action = server.arg("action");
-				bool active = action.equals("on");
-				bool set = active || action.equals("off");
+				const bool on     = action.equals("on");
+				const bool dose   = action.equals("dose");
+				const bool active = on || dose;
+				const bool set    = active || action.equals("off");
+				const bool manual = on && !dose;
 				if (set) {
-					if (pump.equals("ca")) {
-						pumps[Mineral::Ca].manual = active;
-						pumps[Mineral::Ca].set(active);
-					}
-					else if (pump.equals("mg")) {
-						pumps[Mineral::Ca].manual = active;
-						pumps[Mineral::Mg].set(active);
-					}
-					else if (pump.equals("kh")) {
-						pumps[Mineral::Ca].manual = active;
-						pumps[Mineral::KH].set(active);
+					Mineral which = Mineral::Count;
+					/**/ if (pump.equals("ca")) which = Mineral::Ca;
+					else if (pump.equals("mg")) which = Mineral::Mg;
+					else if (pump.equals("kh")) which = Mineral::KH;
+					if (which != Mineral::Count) {
+						pumps[which].manual = manual;
+						pumps[which].set(active);
 					}
 				}
-				const unsigned long currentMillis = millis();
 				int ret = snprintf(
 					response, buffLen,
 					"{"
-						"\"currentTime\":%lu,"
 						"\"mineralsPumps\":{"
-							"\"ca\":{\"lastStartTime\":%lu,\"mL\":%.4f},"
-							"\"mg\":{\"lastStartTime\":%lu,\"mL\":%.4f},"
-							"\"kh\":{\"lastStartTime\":%lu,\"mL\":%.4f}"
-						"}"
+							"\"ca\":{\"lastStartTime\":%lu},"
+							"\"mg\":{\"lastStartTime\":%lu},"
+							"\"kh\":{\"lastStartTime\":%lu}"
+						"},"
+						"\"currentTime\":%lu"
 					"}",
-					currentMillis,
-					pumps[Mineral::Ca].lastStartTime, pumps[Mineral::Ca].getMillilitersForDuration(currentMillis - pumps[Mineral::Ca].lastStartTime),
-					pumps[Mineral::Mg].lastStartTime, pumps[Mineral::Mg].getMillilitersForDuration(currentMillis - pumps[Mineral::Mg].lastStartTime),
-					pumps[Mineral::KH].lastStartTime, pumps[Mineral::KH].getMillilitersForDuration(currentMillis - pumps[Mineral::KH].lastStartTime)
+					pumps[Mineral::Ca].lastStartTime,
+					pumps[Mineral::Mg].lastStartTime,
+					pumps[Mineral::KH].lastStartTime,
+					millis()
 				);
 				if (ret < 0 || static_cast<unsigned int>(ret) >= buffLen) {
 					server.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
@@ -583,7 +585,7 @@ void loop() {
 				lcd.print(F("Niski poziom RO!"));
 			}
 			else if (waterLevelRefillingRequired) {
-				lcd.print(F("Dolewanie RO..."));
+				lcd.print(F("Dolewanie RO... "));
 			}
 			else {
 				lcd.print(F("                "));

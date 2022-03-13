@@ -49,7 +49,13 @@ let colorsCycle = defaultColorCycle.map(e => Object.assign({}, e));
 let airTemperature;
 let waterTemperature = 22.0;
 let phLevel;
-let isHeating = false
+let isHeating = false;
+
+const mineralsPumps = {
+	ca: { lastStartTime: 0, mL: 0 },
+	mg: { lastStartTime: 0, mL: 0 },
+	kh: { lastStartTime: 0, mL: 0 },
+};
 
 const airToWaterTemperatureConversionRatio = 0.0001;
 setInterval(() => {
@@ -84,7 +90,7 @@ app.get('/status', (req, res) => {
 		res.status(200);
 		res.json({
 			waterTemperature: Math.round(waterTemperature * 100) / 100, // cut off .##, step = 0.01
-			airTemperature: Math.round(airTemperature * 4) / 4, // step = 0.25
+			rtcTemperature: Math.round(airTemperature * 4) / 4, // step = 0.25
 			phLevel: Math.round(phLevel * 100) / 100,
 			red: Math.round(red),
 			green: Math.round(green),
@@ -138,8 +144,21 @@ app.get('/config', (req, res) => {
 	res.json(config);
 });
 app.get('/test', (req, res) => {
+	const time = Date.now() - 1647000000000;
+	if (req.query.pump) {
+		const key = req.query.pump;
+		if (req.query.action == 'on') {
+			mineralsPumps[key].lastStartTime = time;
+		}
+		else if (req.query.action == 'off') {
+			mineralsPumps[key].mL = config.mineralsPumps[key].mL + (Math.random() - 0.5);
+		}
+	}
 	res.status(200);
-	res.json({});
+	res.json({
+		currentTime: time,
+		mineralsPumps,
+	});
 });
 app.get('/saveEEPROM', (req, res) => {
 	res.sendStatus(200);

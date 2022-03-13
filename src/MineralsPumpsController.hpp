@@ -46,8 +46,20 @@ namespace MineralsPumpsController {
 			duration = static_cast<unsigned long>(settings.calibration * mL + 0.5f);
 		}
 
+		inline float getCalibration() const {
+			return settings.calibration;
+		}
+		void setCalibration(float value) {
+			settings.calibration = value;
+			duration = static_cast<unsigned long>(value * settings.milliliters + 0.5f);
+		}
+
 		float getMillilitersForDuration(unsigned long duration) {
 			return (float) duration / settings.calibration;
+		}
+
+		inline unsigned long getStopTime() {
+			return lastStartTime + duration;
 		}
 
 		MineralPump(uint8_t pin) : pin(pin) {}
@@ -82,6 +94,8 @@ namespace MineralsPumpsController {
 		{ 4 },
 	};
 
+	const char* pumpsKeys[Mineral::Count] = { "ca", "mg", "kh" };
+
 	constexpr unsigned int EEPROMOffset = 0x200;
 
 	inline void saveSettings() {
@@ -92,7 +106,6 @@ namespace MineralsPumpsController {
 	inline void readSettings() {
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
 			EEPROM.get(EEPROMOffset + i * sizeof(MineralPumpSettings), pumps[i].settings);
-			pumps[i].settings.calibration = 412.0f;
 			pumps[i].setMilliliters(pumps[i].settings.milliliters);
 		}
 	}
