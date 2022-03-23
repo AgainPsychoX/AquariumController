@@ -10,10 +10,10 @@ namespace CloudLogger {
 	constexpr bool discardResponse = true;
 
 	unsigned long int interval = 0;
-	inline unsigned long int parseIntervalFromSetting(uint8_t setting) {
+	unsigned long int parseIntervalFromSetting(uint8_t setting) {
 		return static_cast<unsigned long int>((setting & 0b10000000) ? 60 : 1) * (setting & 0b01111111) * 1000;
 	}
-	inline uint8_t parseIntervalToSetting(unsigned long int interval) {
+	uint8_t parseIntervalToSetting(unsigned long int interval) {
 		unsigned short int seconds = interval / 1000;
 		return seconds <= 127 ? seconds : (0b10000000 & (seconds / 60));
 	}
@@ -32,12 +32,9 @@ namespace CloudLogger {
 		float phLevel;
 	};
 
-	const char SerialLogPrefix_push[] PROGMEM = "CloudLogger::push() ";
-
 	void push(Entry entry) {
-#if DEBUG_CLOUD_LOGGER >= 2
+		[[maybe_unused]]
 		unsigned long int startTime = millis();
-#endif
 
 		// Prepare SSL client
 		WiFiClientSecure sslClient;
@@ -51,8 +48,7 @@ namespace CloudLogger {
 		// Prepare HTTPS client
 		HTTPClient httpClient;
 		if (!httpClient.begin(sslClient, F("https://script.google.com/macros/s/AKfycbzNjb9VDXi9RayxOderzEnBSd-2OY8O6I-WqUD0YJTDE5wRQWC0/exec"))) {
-			Serial.print(SerialLogPrefix_push);
-			Serial.println(F("Unable to connect to cloud server"));
+			LOG_ERROR(CloudLogger, "Unable to connect to cloud server");
 			return;
 		}
 		httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
@@ -60,9 +56,9 @@ namespace CloudLogger {
 		// Prepare request body
 		DateTime now = rtc.now();
 		constexpr unsigned int bufferLength = 128;
-		char dataBuffer[bufferLength];
+		char buffer[bufferLength];
 		int writtenLength = snprintf(
-			dataBuffer, bufferLength,
+			buffer, bufferLength,
 			"{"
 				"\"rtcTemperature\":%.2f,"
 				"\"waterTemperature\":%.2f,"
@@ -76,49 +72,36 @@ namespace CloudLogger {
 			now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()
 		);
 		if (writtenLength < 0 || static_cast<unsigned int>(writtenLength) >= bufferLength) {
-			Serial.print(SerialLogPrefix_push);
-			Serial.println(F("Request buffer exceeded"));
+			LOG_ERROR(CloudLogger, "snprintf failed");
 			return;
 		}
 
-#if DEBUG_CLOUD_LOGGER >= 1
-		Serial.print(SerialLogPrefix_push);
-		Serial.print(F("Logging sample to cloud: "));
-		Serial.println(dataBuffer);
-#endif
+		LOG_DEBUG(CloudLogger, "Logging sample to cloud: %s", buffer);
 
 		// Send POST request
 		httpClient.addHeader(F("Content-Type"), WEB_CONTENT_TYPE_APPLICATION_JSON);
-		int statusCode = httpClient.POST(reinterpret_cast<uint8_t*>(dataBuffer), writtenLength);
+		int statusCode = httpClient.POST(reinterpret_cast<uint8_t*>(buffer), writtenLength);
 		if (!statusCode || statusCode >= 400) {
-			Serial.print(SerialLogPrefix_push);
-			Serial.print(F("Failed, invalid status code: "));
-			Serial.println(statusCode);
+			LOG_ERROR(CloudLogger, "Invalid status code: %i", statusCode);
 			return;
 		}
 
 		if (!discardResponse) {
 			// Read response
-			auto stream = httpClient.getStream();
-			long samplesCount = stream.parseInt(); // TODO: fix here :C
-			Serial.print(SerialLogPrefix_push);
-			Serial.print(F("Already logged "));
-			Serial.print(samplesCount);
-			Serial.print(F(" samples.\r\n"));
+			const String& payload = httpClient.getString();
+			LOG_TRACE(CloudLogger, "Response body: %s", payload.c_str());
+
+			int offset = payload.indexOf(F("samplesCount\":"));
+			if (offset == -1) {
+				LOG_WARN(CloudLogger, "No or invalid response");
+			}
+			else {
+				int samplesCount = atoi(payload.c_str() + offset);
+				LOG_INFO(CloudLogger, "Total %i samples collected", samplesCount);
+			}
 		}
 
-#if DEBUG_CLOUD_LOGGER >= 2
-		unsigned long int endTime = millis();
-		Serial.print(SerialLogPrefix_push);
-		Serial.print(F("time used: "));
-		Serial.print(endTime - startTime);
-		Serial.println(F("ms"));
-
-#if DEBUG_CLOUD_LOGGER >= 3
-		Serial.println(F("Response body: "));
-		Serial.println(httpClient.getString());
-#endif
-#endif
+		LOG_DEBUG(CloudLogger, "Time used %lums", millis() - startTime);
 
 		// Disconnect
 		httpClient.end();
@@ -126,24 +109,22 @@ namespace CloudLogger {
 	}
 
 
-	inline void readSettings() {
+	void readSettings() {
 		uint8_t intervalSetting = 0;
 		EEPROM.get(EEPROMOffset, intervalSetting);
 		interval = parseIntervalFromSetting(intervalSetting);
-#if DEBUG_CLOUD_LOGGER >= 1
+
 		if (interval < 10000) {
-			Serial.print(F("CloudLogger::push() Interval too short, using 10 seconds. Setting was "));
-			Serial.println(intervalSetting, BIN);
+			LOG_WARN(CloudLogger, "Interval too short, using 10 seconds.");
 			interval = 10000;
 		}
-#endif
 	}
-	inline void saveSettings() {
+	void saveSettings() {
 		uint8_t intervalSetting = parseIntervalToSetting(interval);
 		EEPROM.put(EEPROMOffset, intervalSetting);
 	}
 
-	inline void setup() {
+	void setup() {
 		readSettings();
 	}
 }

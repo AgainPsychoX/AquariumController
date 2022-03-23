@@ -5,7 +5,7 @@
 
 + Summarized status display on 2x20 LED.
 + Portal website hosted over Wi-Fi with status and configuration.
-+ LED controls with day schedule configuration and smooth transitions.
++ Lights controls with day schedule configuration and smooth transitions.
 + Water conditioner, with heating controller by thermometer.
 + Water level detection and refilling.
 + Simple circulator controller (periodical)
@@ -119,9 +119,19 @@ Hardware consists of:
 
 
 
-### Notes
+### Modules
 
-#### Web content
+* Web server,
+* Lights controller,
+* Heating controller,
+* Circulator controller,
+* Cloud logging controller,
+* Minerals pumps controller,
+* Water refilling controller,
+
+
+
+### Web content
 
 Web content (`web` directory) is prepared by `prepareWebArduino.js` script into `src/webEncoded` as compressed, allowing easy embedding in web server code with simple macros.
 
@@ -192,35 +202,52 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ Make `/config` use POST for upload, GET for reading, with nicer JSON structure.
-+ Write web API docs.
++ Refactor files into multiple `.cpp` (to avoid recompiling everything every time).
++ Refactor web server into separate file too.
++ Rename PWM controller to lights controller.
++ Write API docs.
++ Working pH meter...
++ Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
 + Use SSL sessions (to avoid partially lag of cloud logger).
 	
 	See https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/bearssl-client-secure-class.html?highlight=WiFiClientSecure
 
-+ Refactor files into multiple `.cpp` (to avoid recompiling everything every time).
-+ Use some macro for logging instead of multiple `#if`?.
-+ Minerals pumps calibration with EEPROM saving.
-+ Store Wi-Fi settings (SSID/password) in EEPROM. 
++ Use X509 keys for SSL. Also maybe allow less secure, but faster SSL. 
+
+	See https://github.com/esp8266/Arduino/blob/448486a4c9db1e74a60fa922c8388116c01c5f2b/libraries/ESP8266WiFi/examples/BearSSL_Validation/BearSSL_Validation.ino
+
 + Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
-+ Cloud logger buffer (configurable; in such case charts could get data from status too?).
++ Store Wi-Fi settings (SSID/password) in EEPROM. 
 + Store cloud logger settings in EEPROM (incl. URL and fingerprint).
++ Password protection for web panel (store in EEPROM).
 + Add security token to cloud communication.
 + Include cloud endpoint code (Google App Scripts) here.
 + Fit colors cycle configuration on mobile nicely, somehow.
 + Circulator force run button.
++ Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
++ Add fancy animations on demand for LEDs.
++ Auto-update SSL certs fingerprints?
++ Proper seeding code, incl. WiFi.
++ RESTful API.
 + Show total running time (from last power-on), under current time at web portal.
 + Chart link/button for last hour/day should show error if no data to show.
 + Add loading/error information for line charts.
-+ Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
-+ Use `snprintf_P` in place of `snprintf`.
-+ Proper seeding code, incl. WiFi.
++ Cloud logger buffer (configurable; in such case charts could get data from status too?).
 + Add recessiveness to `prepareWebArduino`.
 + Add `--watch` to `prepareWebArduino`.
++ Use `snprintf_P` in place of `snprintf`? SRAM is faster than PROGMEM tho.
 + Try overclock ESP into 160 MHz.
 + Water wind controller (nie ma PWM, ale może krótkie pulsy?).
 + Exportable/importable colour cycle configuration (as JSON/encoded?) .
 + Saving/reading colour cycle presets from browser storage.
-+ Auto-update SSL certs fingerprints?
-+ EEPROM saved calibration for elements dosing pumps controller.
-+ Working pH meter...
++ Refactor DS3231 library (lighter one, use full DS3231 instead pieces).
++ Use `mimetable.cpp` for MIME types?
++ Standard Arduino/ESP core libraries are bad... 
+
+	- Stream using int instead char?
+	- Lack or invalid comments.
+	- Inconsistent namings.
+	- Formatting even worse than C++ STD.
+	- Paying for unused features.
+
+

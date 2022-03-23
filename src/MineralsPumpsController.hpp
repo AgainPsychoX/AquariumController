@@ -21,6 +21,14 @@ namespace MineralsPumpsController {
 
 		uint8_t milliliters;
 		uint8_t _pad;
+
+		/// Allocates C-style string representing entry data.
+		/// Format: `255mL @ 00:00 c: 123.456`.
+		std::unique_ptr<char[]> toCString(int pad = 0) const {
+			char* buf = new char[32]; 
+			snprintf(buf, 32, "%*umL @ %02u:%02u c: %f", pad, milliliters, hour, minute, calibration);
+			return std::unique_ptr<char[]>(buf);
+		}
 	};
 	static_assert(sizeof(MineralPumpSettings) == 8, "Structures saved on EEPROM must have guaranted size!");
 
@@ -98,38 +106,30 @@ namespace MineralsPumpsController {
 
 	constexpr unsigned int EEPROMOffset = 0x200;
 
-	inline void saveSettings() {
+	void saveSettings() {
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
 			EEPROM.put(EEPROMOffset + i * sizeof(MineralPumpSettings), pumps[i].settings);
 		}
 	}
-	inline void readSettings() {
+	void readSettings() {
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
 			EEPROM.get(EEPROMOffset + i * sizeof(MineralPumpSettings), pumps[i].settings);
 			pumps[i].setMilliliters(pumps[i].settings.milliliters);
 		}
 	}
-#if DEBUG_MINERALS_PUMPS_CONTROLLER >= 1
-	void printOut() {
-		Serial.println(F("MineralsPumpController settings:"));
+	void printSettings() {
+		LOG_INFO(MineralsPumpsController, "Settings:");
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
-			Serial.print(pumps[i].getMilliliters());
-			Serial.print("mL\t@ ");
-			Serial.print(pumps[i].settings.hour);
-			Serial.print(':');
-			Serial.print(pumps[i].settings.minute);
-			Serial.print("\t\tc: ");
-			Serial.println(pumps[i].settings.calibration);
+			LOG_INFO(MineralsPumpsController, "%s: %s", pumpsKeys[i], pumps[i].settings.toCString(3));
 		}
 	}
-#endif
 
 	/// Flag for whenever any of the pumps is pumping. Used to avoid heavy tasks while pumping.
 	bool pumping = false;
 
 	Mineral which = Mineral::Count;
 
-	inline void update() {
+	void update() {
 		unsigned long currentMillis = millis();
 
 		// Once every minute check if any pump should be started
@@ -137,20 +137,14 @@ namespace MineralsPumpsController {
 		if (currentMillis - previousEnabling > 59000) {
 			currentMillis = previousEnabling = millis();
 
-#if DEBUG_MINERALS_PUMPS_CONTROLLER >= 1
-			Serial.println(F("MineralsPumpController update() "));
-#endif
+			LOG_TRACE(MineralsPumpsController, "update()");
 
 			// Mark pumps to be queued
 			DateTime now = rtc.now();
 			for (uint8_t i = 0; i < Mineral::Count; i++) {
 				if (pumps[i].shouldStart(now)) {
 					pumps[i].queued = true;
-#if DEBUG_MINERALS_PUMPS_CONTROLLER >= 1
-					Serial.print(F("Pump "));
-					Serial.print(i);
-					Serial.println(F(" queued"));
-#endif
+					LOG_DEBUG(MineralsPumpsController, "Pump #%u (%s) queued", i, pumpsKeys[i]);
 				}
 			}
 
@@ -162,11 +156,7 @@ namespace MineralsPumpsController {
 						pumps[i].set(true);
 						pumping = true;
 						which = static_cast<Mineral>(i);
-#if DEBUG_MINERALS_PUMPS_CONTROLLER >= 1
-						Serial.print(F("Pump "));
-						Serial.print(i);
-						Serial.println(F(" started"));
-#endif
+						LOG_DEBUG(MineralsPumpsController, "Pump #%u (%s) started", i, pumpsKeys[i]);
 						break;
 					}
 				}
@@ -178,20 +168,14 @@ namespace MineralsPumpsController {
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
 			if (pumps[i].shouldStop()) {
 				pumps[i].set(false);
-#if DEBUG_MINERALS_PUMPS_CONTROLLER >= 2
-				Serial.print(F("Pump "));
-				Serial.print(i);
-				Serial.println(F(" stopped"));
-#endif
+				LOG_DEBUG(MineralsPumpsController, "Pump #%u (%s) stopped", i, pumpsKeys[i]);
 			}
 			anyPumping = anyPumping || pumps[i].active;
 		}
 		pumping = anyPumping;
 	}
-	inline void setup() {
+	void setup() {
 		readSettings();
-#if DEBUG_MINERALS_PUMPS_CONTROLLER >= 1
-		printOut();
-#endif
+		printSettings();
 	}
 };

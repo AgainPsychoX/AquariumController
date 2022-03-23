@@ -1,6 +1,6 @@
 {
 	"name": "prepare-web-arduino",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"description": "Script to prepare static web content for easy including in Arduino project.",
 	"author": "Patryk 'PsychoX' Ludwikowski <psychoxivi+arduino@gmail.com>",
 	"license": "MIT",

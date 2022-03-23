@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <memory>
 
 template <uint8_t pin>
 struct PWM {
@@ -99,32 +100,18 @@ namespace SmoothTimedPWM {
 			);
 		}
 
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 1
-		void printOut() const {
-			Serial.print("[");
-			if (this->redValue <= 99) Serial.print(' ');
-			if (this->redValue <= 9)  Serial.print(' ');
-			Serial.print(this->redValue);
-			Serial.print(", ");
-			if (this->greenValue <= 99) Serial.print(' ');
-			if (this->greenValue <= 9)  Serial.print(' ');
-			Serial.print(this->greenValue);
-			Serial.print(", ");
-			if (this->blueValue <= 99) Serial.print(' ');
-			if (this->blueValue <= 9)  Serial.print(' ');
-			Serial.print(this->blueValue);
-			Serial.print(", ");
-			if (this->whiteValue <= 99) Serial.print(' ');
-			if (this->whiteValue <= 9)  Serial.print(' ');
-			Serial.print(this->whiteValue);
-			Serial.print("] @ ");
-			if (this->hour <= 9) Serial.print('0');
-			Serial.print(this->hour);
-			Serial.print(':');
-			if (this->minute <= 9) Serial.print('0');
-			Serial.print(this->minute);
+		/// Allocates C-style string representing entry data.
+		/// Format: `[255, 255, 255, 255] @ 12:00`.
+		std::unique_ptr<char[]> toCString() const {
+			char* buf = new char[32]; 
+			snprintf(
+				buf, 32, 
+				"[%3u, %3u, %3u, %3u] @ %02u:%02u", 
+				redValue, greenValue,blueValue, whiteValue,
+				hour, minute
+			);
+			return std::unique_ptr<char[]>(buf);
 		}
-#endif
 
 		inline bool isValid() const {
 			return hour < 24;
@@ -154,21 +141,20 @@ namespace SmoothTimedPWM {
 	}
 
 	void setup() {
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 1
-		Serial.println(F("SmoothTimedPWM::setup() entries list: "));
-		for (unsigned int i = 0; i < maxEntriesCount; i++) {
-			Serial.print(i);
-			Serial.print('\t');
-			Entry entry;
-			EEPROM.get(entriesEEPROMOffset + i * sizeof(Entry), entry);
-			if (!entry.isValid()) {
-				Serial.println(F("invalid"));
-				continue;
+		if (CHECK_LOG_LEVEL(SmoothTimedPWM, LEVEL_INFO)) {
+			LOG_INFO(SmoothTimedPWM, "Setuping... Entries:");
+			for (unsigned int i = 0; i < maxEntriesCount; i++) {
+				Entry entry;
+				EEPROM.get(entriesEEPROMOffset + i * sizeof(Entry), entry);
+				if (entry.isValid()) {
+					LOG_INFO(SmoothTimedPWM, "%2u. %s", i, entry.toCString().get());
+				}
+				else {
+					LOG_INFO(SmoothTimedPWM, "%2u. invalid", i);
+				}
 			}
-			entry.printOut();
-			Serial.println();
 		}
-#endif
+
 		DateTime now = rtc.now();
 		bool nextFound = false;
 		bool previousFound = false;
@@ -212,7 +198,7 @@ namespace SmoothTimedPWM {
 		}
 
 		if (!nextFound) {
-			Serial.print(F("SmoothTimedPWM::setup() No valid entries, disabling. You might want use reset!"));
+			LOG_WARN(SmoothTimedPWM, "No valid entries, disabling.");
 			disable = true;
 			return;
 		}
@@ -236,7 +222,7 @@ namespace SmoothTimedPWM {
 
 		// If there is only one entry...
 		if (!previousFound) {
-			Serial.print(F("SmoothTimedPWM::setup() Only one valid entry...? Okay"));
+			LOG_DEBUG(SmoothTimedPWM, "Only one valid entry (will result in static color).");
 			previousEntry = nextEntry;
 		}
 
@@ -244,18 +230,8 @@ namespace SmoothTimedPWM {
 		nextTime = nextEntry.getTimepointScheduledAfter(now);
 		previousTime = previousEntry.getTimepointScheduledBefore(now);
 
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 1
-		Serial.print(F("SmoothTimedPWM::setup() previous entry: "));
-		previousEntry.printOut();
-		Serial.print(" (in ");
-		Serial.print(previousTime);
-		Serial.println("s)");
-		Serial.print(F("SmoothTimedPWM::setup() next entry: "));
-		nextEntry.printOut();
-		Serial.print(" (in ");
-		Serial.print(nextTime);
-		Serial.println("s)");
-#endif
+		LOG_DEBUG(SmoothTimedPWM, "Previous entry: %s (%us ago)", previousEntry.toCString().get(), previousTime);
+		LOG_DEBUG(SmoothTimedPWM, "Next entry:     %s (in %us)",  previousEntry.toCString().get(), nextTime);
 	}
 
 	void update() {
@@ -275,25 +251,14 @@ namespace SmoothTimedPWM {
 			while (!nextEntry.isValid());
 			nextTime = nextEntry.getTimepointScheduledAfter(now);
 
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-			Serial.print(F("SmoothTimedPWM::update() next entry: "));
-			nextEntry.printOut();
-			Serial.print(" (in ");
-			Serial.print(nextTime);
-			Serial.println("s)");
-#endif
+			LOG_DEBUG(SmoothTimedPWM, "Next entry: %s (in %us)",  previousEntry.toCString().get(), nextTime);
 		}
 
 		// Update values
 		float ratio = static_cast<float>(currentTime - previousTime) / (nextTime - previousTime);
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 3
-		Serial.print(F("SmoothTimedPWM::update() ratio: "));
-		Serial.print(ratio);
-		Serial.print(" = ");
-		Serial.print(currentTime - previousTime);
-		Serial.print(" / ");
-		Serial.println(nextTime - previousTime);
-#endif
+
+		LOG_TRACE(SmoothTimedPWM, "ratio: %5.3f = %u / %u", ratio, currentTime - previousTime, nextTime - previousTime);
+
 		if (previousEntry.redValue == nextEntry.redValue) {
 			redPWM.set(previousEntry.redValue);
 		}
@@ -324,21 +289,19 @@ namespace SmoothTimedPWM {
 		const char* cstr = server.arg("plain").c_str();
 		unsigned short length = strlen(cstr);
 		unsigned short offset = 0;
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-		Serial.print(F("SmoothTimedPWM::setColorsHandler() length: "));
-		Serial.println(length);
-		Serial.print(F("SmoothTimedPWM::setColorsHandler() content: "));
-		Serial.println(cstr);
-#endif
+
+		LOG_DEBUG(SmoothTimedPWM, "setColorsHandler() length: %u, content: `%s`", length, cstr);
+
 		if (length < 14) {
 			server.send(500, WEB_CONTENT_TYPE_TEXT_PLAIN, F("Not enough data sent"));
 			return;
 		}
+
 		// Format should be like: "#R,G,B,W@HH:mm" (repeated up to 14 times),
 		// where R,G,B,W are colors values (0-255) and HH:mm is timepoint (hours & minutes).
 		// Note: There is no check is it sorted, but this is assumption!
 		unsigned short entriesCount = 0;
-		for (unsigned int i = 0; i < maxEntriesCount; i++) {
+		do {
 			Entry entry;
 			offset += 1; // #
 			entry.redValue = atoi(cstr + offset);
@@ -361,30 +324,18 @@ namespace SmoothTimedPWM {
 			offset += 3; // 12: 
 			entry.minute = atoi(cstr + offset);
 			offset += 2; // 12
-			EEPROM.put(entriesEEPROMOffset + i * sizeof(Entry), entry);
+
+			EEPROM.put(entriesEEPROMOffset + entriesCount * sizeof(Entry), entry);
 			entriesCount++;
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-			Serial.print(F("SmoothTimedPWM::setColorsHandler() Entry["));
-			Serial.print(i);
-			Serial.print(F("] = "));
-			entry.printOut();
-			Serial.println();
-#endif
+
+			LOG_DEBUG(SmoothTimedPWM, "setColorsHandler() Entry[%2u] -> %s", entriesCount, entry.toCString().get());
+
 			if (offset >= length) {
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-				Serial.println(F("SmoothTimedPWM::setColorsHandler() offset >= length ("));
-				Serial.print(offset);
-				Serial.print(" >= ");
-				Serial.println(length);
-#endif
+				LOG_TRACE(SmoothTimedPWM, "setColorsHandler() offset >= length (%u >= %u)", offset, length);
 				break;
 			}
 		}
-
-#if DEBUG_PWM_SMOOTH_TIMED_CONTROLLER >= 2
-		Serial.print(F("SmoothTimedPWM::setColorsHandler() entries count: "));
-		Serial.println(entriesCount);
-#endif
+		while (entriesCount < maxEntriesCount);
 
 		// Fill rest with invalid 
 		for (unsigned int i = entriesCount; i < maxEntriesCount; i++) {
@@ -392,7 +343,7 @@ namespace SmoothTimedPWM {
 		}
 
 		if (entriesCount == maxEntriesCount && offset < length - 4) {
-			Serial.println(F("SmoothTimedPWM::setColorsHandler() Too much entries sent, discarding"));
+			LOG_DEBUG(SmoothTimedPWM, "setColorsHandler() Too much entries sent, discarding");
 		}
 
 		// Run setup to update after change
@@ -400,6 +351,7 @@ namespace SmoothTimedPWM {
 
 		server.send(200);
 	}
+
 	void getColorsHandler() {
 		constexpr unsigned int buffLen = 1024;
 		char response[buffLen];
@@ -441,12 +393,12 @@ namespace SmoothTimedPWM {
 			response[offset - 1] = ']'; // Overwrite last `,`
 		}
 		else {
-			// TODO: Add fake entry for proper display
 			response[offset++] = ']';
 		}
 		response[offset++] = 0;
 		server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
 	}
+
 	void resetColorsHandler() {
 		reset();
 		setup();

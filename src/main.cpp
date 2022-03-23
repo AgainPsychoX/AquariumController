@@ -1,22 +1,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
-// Kontroler akwarium na układzie ESP8266 (NodeMCUv3)
-//
 
-// Ustawienia WiFi:
-const char* ssid = "TP-LINK_Jacek";
-const char* password = "kamildanielpatryk";
-#define CLOUDLOGGER_INSECURE 0
-
-// Debugowanie
-#define DEBUG 1
-#define DEBUG_PWM_SMOOTH_TIMED_CONTROLLER 0
-#define DEBUG_HEATING_CONTROLLER 0
-#define DEBUG_CIRCULATOR_CONTROLLER 0
-#define DEBUG_MINERALS_PUMPS_CONTROLLER 2
-#define DEBUG_CLOUD_LOGGER 0
-
-////////////////////////////////////////////////////////////////////////////////
+#include "common.hpp"
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <Wire.h>
@@ -76,7 +61,7 @@ void setup() {
 		if (now.hour() > 24 || now.minute() > 60) {
 			buildInLed.setup();
 			while (true) {
-				Serial.println(F("RTC failed, please reset its memory!"));
+				LOG_ERROR(RTC, "Failed, please reset its memory!");
 				buildInLed.on();
 				delay(500);
 				buildInLed.off();
@@ -89,22 +74,7 @@ void setup() {
 		}
 
 		// Print time to serial
-		Serial.print(F("Time is "));
-		if (now.hour() < 10) {
-			Serial.print('0');
-		}
-		Serial.print(now.hour());
-		Serial.print(':');
-		if (now.minute() < 10) {
-			Serial.print('0');
-		}
-		Serial.print(now.minute());
-		Serial.print(':');
-		if (now.second() < 10) {
-			Serial.print('0');
-		}
-		Serial.print(now.second());
-		Serial.println(" ");
+		LOG_INFO(RTC, "Time is %02u:%02u:%02u", now.hour(), now.minute(), now.second());
 	}
 
 	// Initialize display
@@ -137,7 +107,7 @@ void setup() {
 			Serial.print(F("."));
 		}
 
-		Serial.println(F("connected!"));
+		Serial.println(F(" connected!"));
 		Serial.print(F("IP address: "));
 		Serial.println(WiFi.localIP());
 		lcd.clear();
@@ -152,11 +122,11 @@ void setup() {
 	WEB_REGISTER_ALL_STATIC(server);
 
 	server.on("/status", []() {
-		constexpr unsigned int buffLen = 256;
-		char response[buffLen];
+		constexpr unsigned int bufferLength = 256;
+		char buffer[bufferLength];
 		DateTime now = rtc.now();
 		int ret = snprintf(
-			response, buffLen,
+			buffer, bufferLength,
 			"{"
 				"\"waterTemperature\":%.2f,"
 				"\"rtcTemperature\":%.2f,"
@@ -179,16 +149,18 @@ void setup() {
 			now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second(),
 			WiFi.RSSI()
 		);
-		if (ret < 0 || static_cast<unsigned int>(ret) >= buffLen) {
+		if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
 			server.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
 		}
-		server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
+		else {
+			server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
+		}
 	});
 	server.on("/config", []() {
 		// Handle config options
-		if (server.hasArg("timestamp")) {
+		if (const String& str = server.arg("timestamp"); !str.isEmpty()) {
 			// Format should be like: "2004-02-12T15:19:21" (without time zones)
-			const char* cstr = server.arg("timestamp").c_str();
+			const char* cstr = str.c_str();
 			ds3231.setYear(  atoi(cstr + 0) % 100);
 			ds3231.setMonth( atoi(cstr + 5));
 			ds3231.setDate(  atoi(cstr + 8));
@@ -196,74 +168,41 @@ void setup() {
 			ds3231.setMinute(atoi(cstr + 14));
 			ds3231.setSecond(atoi(cstr + 17));
 		}
-		if (server.hasArg("red")) {
-			byte value = atoi(server.arg("red").c_str()) % 256;
-			redPWM.set(value);
-		}
-		if (server.hasArg("green")) {
-			byte value = atoi(server.arg("green").c_str()) % 256;
-			greenPWM.set(value);
-		}
-		if (server.hasArg("blue")) {
-			byte value = atoi(server.arg("blue").c_str()) % 256;
-			bluePWM.set(value);
-		}
-		if (server.hasArg("white")) {
-			byte value = atoi(server.arg("white").c_str()) % 256;
-			whitePWM.set(value);
-		}
-		if (server.hasArg("forceColors")) {
-			SmoothTimedPWM::disable = server.arg("forceColors").equals("true");
-		}
-		if (server.hasArg("cloudLoggingInterval")) {
-			CloudLogger::interval = atoi(server.arg("cloudLoggingInterval").c_str()) * 1000;
-			CloudLogger::saveSettings();
-		}
+
+		if (const String& str = server.arg("red");      !str.isEmpty())   redPWM.set(atoi(str.c_str()));
+		if (const String& str = server.arg("green");    !str.isEmpty()) greenPWM.set(atoi(str.c_str()));
+		if (const String& str = server.arg("blue");     !str.isEmpty())  bluePWM.set(atoi(str.c_str()));
+		if (const String& str = server.arg("white");    !str.isEmpty()) whitePWM.set(atoi(str.c_str()));
+		if (const String& str = server.arg("forceColors"); !str.isEmpty()) SmoothTimedPWM::disable = server.arg("forceColors").equals("true");
 
 		// Handle heating config options
 		{
-			bool heatingConfigChanged = false;
+			bool changes = false;
 			if (server.hasArg("heatingMinTemperature")) {
 				HeatingController::minTemperature = atof(server.arg("heatingMinTemperature").c_str());
-#if DEBUG_HEATING_CONTROLLER >= 1
-			Serial.print(F("HTTP /config? () HeatingController minTemperature: "));
-			Serial.println(HeatingController::minTemperature);
-#endif
-				heatingConfigChanged = true;
+				changes = true;
 			}
 			if (server.hasArg("heatingMaxTemperature")) {
 				HeatingController::maxTemperature = atof(server.arg("heatingMaxTemperature").c_str());
-#if DEBUG_HEATING_CONTROLLER >= 1
-			Serial.print(F("HTTP /config? () HeatingController maxTemperature: "));
-			Serial.println(HeatingController::maxTemperature);
-#endif
-				heatingConfigChanged = true;
+				changes = true;
 			}
-			if (heatingConfigChanged) {
+			if (changes) {
 				HeatingController::saveSettings();
 			}
 		}
 
 		// Handle circulator config options
 		{
-			bool configChanged = false;
+			bool changes = false;
 			if (server.hasArg("circulatorActiveTime")) {
 				CirculatorController::activeSeconds = atoi(server.arg("circulatorActiveTime").c_str()) % 65536;
-#if DEBUG_CIRCULATOR_CONTROLLER >= 1
-			Serial.print(F("HTTP /config? () CirculatorController activeSeconds: "));
-			Serial.println(CirculatorController::activeSeconds);
-#endif
-				configChanged = true;
+				changes = true;
 			}
 			if (server.hasArg("circulatorPauseTime")) {
 				CirculatorController::pauseSeconds = atoi(server.arg("circulatorPauseTime").c_str()) % 65536;
-#if DEBUG_CIRCULATOR_CONTROLLER >= 1
-			Serial.print(F("HTTP /config? () CirculatorController pauseSeconds: "));
-			Serial.println(CirculatorController::pauseSeconds);
-#endif
-				configChanged = true;
+				changes = true;
 			}
-			if (configChanged) {
+			if (changes) {
 				CirculatorController::nextUpdateTime = millis() + 1000;
 				CirculatorController::saveSettings();
 			}
@@ -322,47 +261,49 @@ void setup() {
 
 			if (changes) {
 				MineralsPumpsController::saveSettings();
-#if DEBUG_MINERALS_PUMPS_CONTROLLER >= 1
-				MineralsPumpsController::printOut();
-#endif
+				MineralsPumpsController::printSettings();
 			}
+		}
+
+		if (const String& str = server.arg("cloudLoggingInterval"); !str.isEmpty()) {
+			CloudLogger::interval = atoi(str.c_str()) * 1000;
+			CloudLogger::saveSettings();
 		}
 
 		// Response with current config
 		const auto& pump_ca = MineralsPumpsController::pumps[MineralsPumpsController::Mineral::Ca];
 		const auto& pump_mg = MineralsPumpsController::pumps[MineralsPumpsController::Mineral::Mg];
 		const auto& pump_kh = MineralsPumpsController::pumps[MineralsPumpsController::Mineral::KH];
-
-		constexpr unsigned int buffLen = 256;
-		char response[buffLen];
-		int ret = snprintf(
-			response, buffLen,
+		constexpr unsigned int bufferLength = 256;
+		char buffer[bufferLength];
+		int ret = snprintf_P(
+			buffer, bufferLength,
 			"{"
 				"\"heatingMinTemperature\":%.2f,"
 				"\"heatingMaxTemperature\":%.2f,"
 				"\"circulatorActiveTime\":%u,"
 				"\"circulatorPauseTime\":%u,"
-				"\"cloudLoggingInterval\":%u,"
 				"\"mineralsPumps\":{"
 					"\"ca\":{\"time\":%u,\"mL\":%u},"
 					"\"mg\":{\"time\":%u,\"mL\":%u},"
 					"\"kh\":{\"time\":%u,\"mL\":%u}"
-				"}"
+				"},"
+				"\"cloudLoggingInterval\":%u"
 			"}",
 			HeatingController::minTemperature,
 			HeatingController::maxTemperature,
 			CirculatorController::activeSeconds,
 			CirculatorController::pauseSeconds,
-			static_cast<unsigned int>(CloudLogger::interval / 1000),
 			(pump_ca.settings.hour * 60) + pump_ca.settings.minute, pump_ca.getMilliliters(),
 			(pump_mg.settings.hour * 60) + pump_mg.settings.minute, pump_mg.getMilliliters(),
-			(pump_kh.settings.hour * 60) + pump_kh.settings.minute, pump_kh.getMilliliters()
+			(pump_kh.settings.hour * 60) + pump_kh.settings.minute, pump_kh.getMilliliters(),
+			static_cast<unsigned int>(CloudLogger::interval / 1000)
 		);
-		if (ret < 0 || static_cast<unsigned int>(ret) >= buffLen) {
+		if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
 			server.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
 		}
 		else {
-			server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
+			server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
 		}
 
 		// As somebody connected, remove flag
@@ -382,8 +323,8 @@ void setup() {
 	//     server.send(200);
 	// });
 	server.on("/test", []() {
-		constexpr unsigned int buffLen = 256;
-		char response[buffLen];
+		constexpr unsigned int bufferLength = 256;
+		char buffer[bufferLength];
 
 		// Minerals pumps testing
 		{
@@ -407,7 +348,7 @@ void setup() {
 					}
 				}
 				int ret = snprintf(
-					response, buffLen,
+					buffer, bufferLength,
 					"{"
 						"\"mineralsPumps\":{"
 							"\"ca\":{\"lastStartTime\":%lu},"
@@ -421,11 +362,11 @@ void setup() {
 					pumps[Mineral::KH].lastStartTime,
 					millis()
 				);
-				if (ret < 0 || static_cast<unsigned int>(ret) >= buffLen) {
+				if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
 					server.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
 				}
 				else {
-					server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
+					server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
 				}
 				return;
 			}

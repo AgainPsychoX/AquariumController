@@ -3,13 +3,14 @@ const { program } = require('commander');
 
 program
 	.name('prepareWebArduino')
-	.version('0.6.0')
+	.version('0.7.0')
 	.description('Prepares static web content for easy including in Arduino project. Uses PROGMEM where possible.')
 	.option('-i, --input-directory [directory]', 'specify input directory', 'web/')
 	.option('-o, --output-directory [directory]', 'specify output directory', 'webEncoded/')
 	.option('--include-all-filename [filename]', 'change name of include-all file', 'AllStaticContent.hpp')
 	.option('--no-timestamp', 'disable adding timestamp to include-all file')
 	.option('--no-debug-prints', 'disable printing to Serial on every static content served')
+	.option('--debug-print-snippet [code]', 'code for debug printing', 'LOG_DEBUG(Web, "Serving static /${path}")`')
 	.action(async function(options) {
 		const fs = require('fs').promises;
 		const path = require('path/posix');
@@ -47,6 +48,7 @@ ${'0x' + hexDigitPairs.join(', 0x')}
 };
 `
 			));
+			console.log(`Processed ${inputPath.padEnd(32)} \tRaw size: ${data.length.toString().padStart(6)}\tCompressed: ${hexDigitPairs.length.toString().padStart(6)}`)
 			allFilesRelativePaths.push(relativePath);
 		}
 		const processDirectory = async (directoryPath, directoryRelativePath) => {
@@ -100,16 +102,14 @@ const char WEB_CONTENT_TYPE_IMAGE_X_ICON[] PROGMEM              = "image/x-icon"
 const char WEB_CONTENT_TYPE_APPLICATION_JSON[] PROGMEM          = "application/json";
 const char WEB_CONTENT_TYPE_APPLICATION_OCTET_STREAM[] PROGMEM  = "application/octet-stream";
 
-#define WEB_USE_CACHE_STATIC(server) \\
-server.sendHeader(WEB_CACHE_CONTROL, WEB_CACHE_CONTROL_CACHE)
-#define WEB_USE_GZIP_STATIC(server) \\
-server.sendHeader(WEB_CONTENT_ENCODING, WEB_CONTENT_ENCODING_GZIP)
+#define WEB_USE_CACHE_STATIC(server) server.sendHeader(WEB_CACHE_CONTROL,    WEB_CACHE_CONTROL_CACHE)
+#define WEB_USE_GZIP_STATIC(server)  server.sendHeader(WEB_CONTENT_ENCODING, WEB_CONTENT_ENCODING_GZIP)
 
 #define WEB_REGISTER_ALL_STATIC(server) do { \\`
 				) + 
 				allFilesRelativePaths.map(path => {
 					const defName = path.replace(/[./\-+#\(\)\[\]]/g, '_');
-					let mimeDef = ({
+					const mimeDef = ({
 						'html': 'TEXT_HTML',
 						'htm':  'TEXT_HTML',
 						'js':   'TEXT_JAVASCRIPT',
@@ -119,14 +119,14 @@ server.sendHeader(WEB_CONTENT_ENCODING, WEB_CONTENT_ENCODING_GZIP)
 						'json': 'APPLICATION_JSON',
 					})[getExtension(path).toLowerCase()] || 'APPLICATION_OCTET_STREAM';
 					return (`
-server.on(F("/${path}"), []() { \\`
+	server.on(F("/${path}"), []() { \\`
 					) + (!options.debugPrints ? '' : (`
-Serial.println(F("[WEB] requesting: /${path}")); \\`
+		${options.debugPrintSnippet.replace('${path}', path)}; \\`
 					)) + (`
-WEB_USE_CACHE_STATIC(server); \\
-WEB_USE_GZIP_STATIC(server); \\
-server.send_P(200, WEB_CONTENT_TYPE_${mimeDef}, WEB_${defName}, sizeof(WEB_${defName})); \\
-}); \\`
+		WEB_USE_CACHE_STATIC(server); \\
+		WEB_USE_GZIP_STATIC(server); \\
+		server.send_P(200, WEB_CONTENT_TYPE_${mimeDef}, WEB_${defName}, sizeof(WEB_${defName})); \\
+	}); \\`
 					);
 				}).join('') + (
 `

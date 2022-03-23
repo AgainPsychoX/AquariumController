@@ -12,11 +12,11 @@ namespace CirculatorController {
 	bool active = false;
 	unsigned long int nextUpdateTime = 0;
 
-	inline void saveSettings() {
+	void saveSettings() {
 		EEPROM.put(EEPROMOffset + 0, activeSeconds);
 		EEPROM.put(EEPROMOffset + 2, pauseSeconds);
 	}
-	inline void readSettings() {
+	void readSettings() {
 		EEPROM.get(EEPROMOffset + 0, activeSeconds);
 		EEPROM.get(EEPROMOffset + 2, pauseSeconds);
 	}
@@ -24,7 +24,7 @@ namespace CirculatorController {
 		return active;
 	}
 
-	inline void update() {
+	void update() {
 		if (pauseSeconds == 0) {
 			active = true;
 			ioExpander.digitalWrite(ioExpanderPin, LOW);
@@ -41,23 +41,17 @@ namespace CirculatorController {
 				nextUpdateTime = currentTime + pauseSeconds * 1000;
 				active = false;
 				ioExpander.digitalWrite(ioExpanderPin, HIGH);
-#if DEBUG_CIRCULATOR_CONTROLLER >= 1
-				Serial.print(F("CirculatorController::update() pause until "));
-				Serial.println(nextUpdateTime);
-#endif
+				LOG_DEBUG(CirculatorController, "pause util %u", nextUpdateTime);
 			}
 			else {
 				nextUpdateTime = currentTime + activeSeconds * 1000;
 				active = true;
 				ioExpander.digitalWrite(ioExpanderPin, LOW);
-#if DEBUG_CIRCULATOR_CONTROLLER >= 1
-				Serial.print(F("CirculatorController::update() active until "));
-				Serial.println(nextUpdateTime);
-#endif
+				LOG_DEBUG(CirculatorController, "active util %u", nextUpdateTime);
 			}
 		}
 	}
-	inline void setup() {
+	void setup() {
 		readSettings();
 	}
 };
