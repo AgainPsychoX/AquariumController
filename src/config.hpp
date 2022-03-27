@@ -9,6 +9,7 @@ USE_LOG_LEVEL(MineralsPumps,    LEVEL_INFO);
 USE_LOG_LEVEL(CloudLogger,      LEVEL_INFO);
 USE_LOG_LEVEL(Circulator,       LEVEL_INFO);
 USE_LOG_LEVEL(Heating,          LEVEL_INFO);
+USE_LOG_LEVEL(phMeter,          LEVEL_TRACE);
 
 // WiFi settings
 const char ssid[] = "TP-LINK_Jacek";

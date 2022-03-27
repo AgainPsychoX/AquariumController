@@ -49,6 +49,7 @@ function handleFetchResult(promise, successMessage = 'Wysłano!', failureMessage
 			if (successMessage) {
 				alert(successMessage);
 			}
+			return response;
 		})
 		.catch(error => {
 			if (failureMessage) {
@@ -351,7 +352,7 @@ const booleanStatusBits = [
 							document.querySelector(`output[name=${key}]`).innerText = value + '°C';
 							break;
 						case 'phLevel':
-							document.querySelector('output[name=phLevel]').innerText = value;
+							document.querySelector('output[name=phLevel]').innerText = value.toFixed(2);
 							break;
 						case 'rssi': {
 							rssiOutput.classList.remove('error');
@@ -496,6 +497,10 @@ document.querySelector('button[name=synchronize-time]').addEventListener('click'
 	handleFetchResult(fetch(`${baseHost}/config?timestamp=${string}`));
 });
 
+// document.querySelector('button[name=ph-calibrate]').addEventListener('click', async () => {
+// 	// TODO: ...
+// });
+
 // Load settings
 fetch(`${baseHost}/config`)
 	.then((response) => {
@@ -547,10 +552,8 @@ fetch(`${baseHost}/config`)
 			manualDoseButton.addEventListener('click', async () => {
 				manualDoseButton.disabled = true;
 				await saveMineralsPumpsSettings();
-				await fetch(`${baseHost}/mineralsPumps?key=${key}&action=dose`);
-				setTimeout(() => {
-					manualDoseButton.disabled = false;
-				}, 5000);
+				await handleFetchResult(fetch(`${baseHost}/mineralsPumps?key=${key}&action=dose`));
+				manualDoseButton.disabled = false;
 			});
 
 			const calibrateButton = fragment.querySelector('button[name=calibrate]');
@@ -562,17 +565,17 @@ fetch(`${baseHost}/config`)
 					return;
 				}
 
-				await fetch(`${baseHost}/mineralsPumps?key=${key}&action=on`);
+				await handleFetchResult(fetch(`${baseHost}/mineralsPumps?key=${key}&action=on`), false);
 
 				alert("Pompowanie trwa. Kliknij OK po przepompowaniu wyznaczonej ilości.");
 
-				const stats = await fetch(`${baseHost}/mineralsPumps?key=${key}&action=off`).then(r => r.json());
+				const stats = await handleFetchResult(fetch(`${baseHost}/mineralsPumps?key=${key}&action=off`), false).then(r => r.json());
 				const pump = stats.mineralsPumps[key];
 				const duration = stats.currentTime - pump.lastStartTime;
 				const c = duration / mL;
 				
 				if (confirm(`Pompa wyłączona.\nCzas: ${duration}\nmL: ${mL}\nStała kalibracji: ${c} (czas w ms dla 1 mL)\n\nZapisać?`)) {
-					handleFetchResult(fetch(`${baseHost}/config?mineralsPumps.${key}.c=${c}`));
+					await handleFetchResult(fetch(`${baseHost}/config?mineralsPumps.${key}.c=${c}`));
 				}
 				
 				calibrateButton.disabled = false;

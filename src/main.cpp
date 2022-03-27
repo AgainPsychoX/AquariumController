@@ -15,6 +15,7 @@
 #include "CirculatorController.hpp"
 #include "CloudLogger.hpp"
 #include "MineralsPumpsController.hpp"
+#include "phMeter.hpp"
 
 PCF8574 ioExpander {0x26};
 
@@ -132,6 +133,7 @@ void setup() {
 	Circulator::setup();
 	MineralsPumps::setup();
 	CloudLogger::setup();
+	phMeter::setup();
 
 	// Register server handlers
 	webServer.on(F("/"), []() {
@@ -150,7 +152,7 @@ void setup() {
 			"{"
 				"\"waterTemperature\":%.2f,"
 				"\"rtcTemperature\":%.2f,"
-				"\"phLevel\":%.2f,"
+				"\"phLevel\":%.6f,"
 				"\"red\":%d,\"green\":%d,\"blue\":%d,\"white\":%d,"
 				"\"isHeating\":%d,"
 				"\"isRefilling\":%d,"
@@ -160,7 +162,7 @@ void setup() {
 			"}",
 			waterTemperature,
 			ds3231.getTemperature(),
-			7.11f,
+			phMeter::readAverage(),
 			redPWM.get(), greenPWM.get(), bluePWM.get(), whitePWM.get(),
 			Heating::isHeating(),
 			WaterLevel::refillingRequired,
@@ -342,6 +344,37 @@ void setup() {
 
 	webServer.on(F("/mineralsPumps"), MineralsPumps::handleWebEndpoint);
 
+	if constexpr (debugLevel >= LEVEL_DEBUG) {
+		// Hidden API for testing propuses
+		webServer.on(F("/test"), []() {
+			// const int adcValue = analogRead(phMeter::pin);
+			// const float voltage = (float)adcValue / 1024 * 3.3f;
+			// const float pH = 7.f - (2.5f - voltage) * phMeter::calibration;
+
+			// constexpr unsigned int bufferLength = 128;
+			// char buffer[bufferLength];
+			// int ret = snprintf(
+			// 	buffer, bufferLength,
+			// 	"{"
+			// 		"\"adc\":%i,"
+			// 		"\"voltage\":%.4f,"
+			// 		"\"pH\":%.4f,"
+			// 		"\"currentTime\":%lu"
+			// 	"}",
+			// 	adcValue,
+			// 	voltage,
+			// 	pH,
+			// 	millis()
+			// );
+			// if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
+			// 	webServer.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
+			// }
+			// else {
+			// 	webServer.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
+			// }
+		});
+	}
+
 	webServer.onNotFound([]() {
 		webServer.send(404, WEB_CONTENT_TYPE_TEXT_PLAIN, PSTR("Not found\n\n"));
 	});
@@ -369,7 +402,7 @@ void loop() {
 			CloudLogger::push({
 				.waterTemperature = waterTemperature,
 				.rtcTemperature = ds3231.getTemperature(),
-				.phLevel = 7.11f
+				.phLevel = phMeter::readAverage(),
 			});
 		}
 	}
@@ -380,6 +413,11 @@ void loop() {
 		Circulator::update();
 
 		WaterLevel::update();
+
+		phMeter::update();
+
+		// For debug & calibration
+		// LOG_TRACE(phMeter, "Raw: %4u Avg: %4u", phMeter::readRaw(), phMeter::readRawAverage());
 	}
 
 	UPDATE_EVERY(1000) {

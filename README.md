@@ -10,7 +10,7 @@
 + Water level detection and refilling.
 + Simple circulator controller (periodical)
 + Dosing minerals/micro-elements with pumps.
-+ Water pH (acidity/basicity) meter.
++ Water pH (acidity/basicity) meter (PH-4502C).
 + Cloud logging of various parameters.
 + Most of UI uses Polish language.
 
@@ -159,7 +159,7 @@ Returns:
 {
 	"waterTemperature": 22.01,
 	"rtcTemperature": 22.25,
-	"phLevel": 7.11,
+	"phLevel": 7.1234,
 	
 	"red": 0,
 	"green": 127,
@@ -283,8 +283,9 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ Working pH meter...
 + Add pH meter calibration (save on EEPROM)
++ Alternate pH level and temperature displaying on LCD 
++ Prevent recompilation of `*.cpp` when updating static web files.
 + Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
 + Write rest of API docs.
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
