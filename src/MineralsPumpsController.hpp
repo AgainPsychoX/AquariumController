@@ -1,4 +1,5 @@
 #pragma once
+
 #include "common.hpp"
 
 namespace MineralsPumps {
@@ -118,7 +119,7 @@ namespace MineralsPumps {
 	void printSettings() {
 		LOG_INFO(MineralsPumps, "Settings:");
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
-			LOG_INFO(MineralsPumps, "%s: %s", pumpsKeys[i], pumps[i].settings.toCString(3));
+			LOG_INFO(MineralsPumps, "%s: %s", pumpsKeys[i], pumps[i].settings.toCString(3).get());
 		}
 	}
 

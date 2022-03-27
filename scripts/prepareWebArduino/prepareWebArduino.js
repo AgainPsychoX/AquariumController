@@ -74,7 +74,7 @@ program
 extern const char WEB_${constNamePathPart}_CONTENT[] PROGMEM;
 extern const char WEB_${constNamePathPart}_PATH[] PROGMEM;
 
-const char WEB_${constNamePathPart}_PATH[] PROGMEM = "${relativePath}";
+const char WEB_${constNamePathPart}_PATH[] PROGMEM = "/${relativePath}";
 const char WEB_${constNamePathPart}_CONTENT[] PROGMEM = {
 ${'0x' + hexDigitPairs.join(', 0x')}
 };

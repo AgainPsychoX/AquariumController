@@ -25,31 +25,10 @@ constexpr uint32_t hashLogCompStr(const char (&str) [N]) {
 	return fnv1a_32(str, N - 1);
 }
 
-#ifdef DEBUG
-
-template <uint64_t str_hash>
-struct LogLevelForComponent
-{
-	static constexpr int value = DEBUG;
-};
-#	define USE_LOG_LEVEL(component, level)                                     \
-template <> struct LogLevelForComponent<hashLogCompStr(STRINGIFY(component))>  \
-    { static constexpr int value = level; }
-#	define GET_LOG_LEVEL(component) LogLevelForComponent<hashLogCompStr(STRINGIFY(component))>::value
-#	define CHECK_LOG_LEVEL(component, level) (GET_LOG_LEVEL(component) >= level)
-
-#else // DEBUG
-
-template <uint64_t str_hash>
-struct LogLevelForComponent
-{
-	static constexpr int value = 0;
-};
-#	define USE_LOG_LEVEL(...) 
-#	define GET_LOG_LEVEL(...) 0
-#	define CHECK_LOG_LEVEL(...) 0
-
-#endif // DEBUG
+#define USE_LOG_LEVEL_DEFAULT(level)    template <uint64_t str_hash> struct LogLevelForComponent { static constexpr int value = level; };
+#define USE_LOG_LEVEL(component, level) template <> struct LogLevelForComponent<hashLogCompStr(STRINGIFY(component))> { static constexpr int value = level; }
+#define GET_LOG_LEVEL(component) LogLevelForComponent<hashLogCompStr(STRINGIFY(component))>::value
+#define CHECK_LOG_LEVEL(component, level) (GET_LOG_LEVEL(component) >= level)
 
 #include "config.hpp"
 
@@ -69,21 +48,12 @@ struct LogLevelForComponent
 
 #define WHERE_AM_I_STR __FILE__ ":" STRINGIFY(__LINE__)
 
-#	if DEBUG >= LEVEL_ERROR
-#		define LOG_ERROR(comp, ...) if (CHECK_LOG_LEVEL(comp, LEVEL_ERROR)) _LOG_IMPL(LEVEL_ERROR, comp, __VA_ARGS__)
-#	endif
-#	if DEBUG >= LEVEL_WARN
-#		define LOG_WARN(comp, ...) if (CHECK_LOG_LEVEL(comp, LEVEL_WARN)) _LOG_IMPL(LEVEL_WARN, comp, __VA_ARGS__)
-#	endif
-#	if DEBUG >= LEVEL_INFO
-#		define LOG_INFO(comp, ...) if (CHECK_LOG_LEVEL(comp, LEVEL_INFO)) _LOG_IMPL(LEVEL_INFO, comp, __VA_ARGS__)
-#	endif
-#	if DEBUG >= LEVEL_DEBUG
-#		define LOG_DEBUG(comp, ...) if (CHECK_LOG_LEVEL(comp, LEVEL_DEBUG)) _LOG_IMPL(LEVEL_DEBUG, comp, __VA_ARGS__)
-#	endif
-#	if DEBUG >= LEVEL_TRACE
-#		define LOG_TRACE(comp, ...) if (CHECK_LOG_LEVEL(comp, LEVEL_TRACE)) _LOG_IMPL_(LEVEL_TRACE, comp, __VA_ARGS__)
-#	endif
+#	define LOG_ERROR(comp, ...) if (CHECK_LOG_LEVEL(comp, LEVEL_ERROR)) _LOG_IMPL(LEVEL_ERROR, comp, __VA_ARGS__)
+#	define LOG_WARN(comp, ...)  if (CHECK_LOG_LEVEL(comp, LEVEL_WARN))  _LOG_IMPL(LEVEL_WARN, comp, __VA_ARGS__)
+#	define LOG_INFO(comp, ...)  if (CHECK_LOG_LEVEL(comp, LEVEL_INFO))  _LOG_IMPL(LEVEL_INFO, comp, __VA_ARGS__)
+#	define LOG_DEBUG(comp, ...) if (CHECK_LOG_LEVEL(comp, LEVEL_DEBUG)) _LOG_IMPL(LEVEL_DEBUG, comp, __VA_ARGS__)
+#	define LOG_TRACE(comp, ...) if (CHECK_LOG_LEVEL(comp, LEVEL_TRACE)) _LOG_IMPL(LEVEL_TRACE, comp, __VA_ARGS__)
+
 #endif
 
 #ifndef LOG_ERROR

@@ -1,8 +1,9 @@
 #pragma once
 
-#define DEBUG LEVEL_INFO
+#define DEBUG LEVEL_DEBUG
 constexpr auto debugLevel = DEBUG;
 
+USE_LOG_LEVEL_DEFAULT(DEBUG);
 USE_LOG_LEVEL(Lighting,         LEVEL_INFO);
 USE_LOG_LEVEL(MineralsPumps,    LEVEL_INFO);
 USE_LOG_LEVEL(CloudLogger,      LEVEL_INFO);
