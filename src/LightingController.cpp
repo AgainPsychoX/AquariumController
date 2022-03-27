@@ -1,126 +1,72 @@
-#pragma once // Note: Included directly in certain place.
+#include "LightingController.hpp"
 
-#include <Arduino.h>
-#include <EEPROM.h>
-#include <memory>
-
-template <uint8_t pin>
-struct PWM {
-	byte current;
-
-	PWM() {
-		pinMode(pin, OUTPUT);
-		analogWrite(pin, current); 
-	}
-
-	inline void set(byte power) {
-		current = power;
-		analogWrite(pin, current); 
-	}
-
-	inline byte get() {
-		return current;
-	}
-};
-
-// Pulse Width Modulation outputs settings
-// PINs
 PWM<13> redPWM;
 PWM<15> greenPWM;
 PWM<12> bluePWM;
 PWM<14> whitePWM;
 
-
-
-////////////////////////////////////////////////////////////////////////////////
-
 // Smooth timed controller
-namespace SmoothTimedPWM {
-	constexpr unsigned int maxEntriesCount = 14;
-	constexpr unsigned int entriesEEPROMOffset = 0x010;
-
-	/// Entry for PWM values in certain timepoint.
-	/// Assumption: Entries are sorted in EEPROM.
-	struct Entry {
-		byte hour; // TODO: "disabled" bit?
-		byte minute; // TODO: week day flags by bits?
-		byte redValue;
-		byte greenValue;
-		byte blueValue;
-		byte whiteValue;
-		byte _pad[2];
-
-		Entry() {}
-
-		Entry(byte hour, byte minute, 
-				byte red, byte green, byte blue, byte white)
-			: hour(hour), minute(minute), 
-				redValue(red), greenValue(green), blueValue(blue), whiteValue(white)
-		{}
-
-		uint32_t getTimepointScheduledAfter(const DateTime& dateTime) const {
-			uint32_t timepoint = dateTime.unixtime();
-			signed char hourDiff = static_cast<signed char>(this->hour) - dateTime.hour();
-			signed char minuteDiff = static_cast<signed char>(this->minute) - dateTime.minute();
-			if (hourDiff < 0 || (hourDiff == 0 && minuteDiff < 0)) {
-				hourDiff += 24;
-			}
-			timepoint += (hourDiff * 60 + minuteDiff) * 60;
-			return timepoint;
+namespace Lighting {
+	uint32_t Entry::getTimepointScheduledAfter(const DateTime& dateTime) const {
+		uint32_t timepoint = dateTime.unixtime();
+		signed char hourDiff = static_cast<signed char>(this->hour) - dateTime.hour();
+		signed char minuteDiff = static_cast<signed char>(this->minute) - dateTime.minute();
+		if (hourDiff < 0 || (hourDiff == 0 && minuteDiff < 0)) {
+			hourDiff += 24;
 		}
+		timepoint += (hourDiff * 60 + minuteDiff) * 60;
+		return timepoint;
+	}
 
-		uint32_t getTimepointScheduledBefore(const DateTime& dateTime) const {
-			uint32_t timepoint = dateTime.unixtime();
-			signed char hourDiff = static_cast<signed char>(this->hour) - dateTime.hour();
-			signed char minuteDiff = static_cast<signed char>(this->minute) - dateTime.minute();
-			if (hourDiff > 0 || (hourDiff == 0 && minuteDiff > 0)) {
-				hourDiff -= 24;
-			}
-			timepoint += (hourDiff * 60 + minuteDiff) * 60;
-			return timepoint;
+	uint32_t Entry::getTimepointScheduledBefore(const DateTime& dateTime) const {
+		uint32_t timepoint = dateTime.unixtime();
+		signed char hourDiff = static_cast<signed char>(this->hour) - dateTime.hour();
+		signed char minuteDiff = static_cast<signed char>(this->minute) - dateTime.minute();
+		if (hourDiff > 0 || (hourDiff == 0 && minuteDiff > 0)) {
+			hourDiff -= 24;
 		}
+		timepoint += (hourDiff * 60 + minuteDiff) * 60;
+		return timepoint;
+	}
 
-		signed char compareHours(byte hour, byte minute, byte second) {
-			if (this->hour > hour) return 1;
-			if (this->hour < hour) return -1;
-			if (this->minute > minute) return 1;
-			if (this->minute < minute) return -1;
-			if (0 < second) return -1;
-			return 0;
-		}
+	signed char Entry::compareHours(byte hour, byte minute, byte second) {
+		if (this->hour > hour) return 1;
+		if (this->hour < hour) return -1;
+		if (this->minute > minute) return 1;
+		if (this->minute < minute) return -1;
+		if (0 < second) return -1;
+		return 0;
+	}
 
-		bool operator==(const Entry& other) const {
-			return (
-				this->hour == other.hour &&
-				this->minute == other.minute// &&
-				// this->redValue == other.redValue &&
-				// this->greenValue == other.greenValue &&
-				// this->blueValue == other.blueValue &&
-				// this->whiteValue == other.whiteValue
-			);
-		}
+	bool Entry::operator==(const Entry& other) const {
+		return (
+			this->hour == other.hour &&
+			this->minute == other.minute// &&
+			// this->redValue == other.redValue &&
+			// this->greenValue == other.greenValue &&
+			// this->blueValue == other.blueValue &&
+			// this->whiteValue == other.whiteValue
+		);
+	}
 
-		/// Allocates C-style string representing entry data.
-		/// Format: `[255, 255, 255, 255] @ 12:00`.
-		std::unique_ptr<char[]> toCString() const {
-			char* buf = new char[32]; 
-			snprintf(
-				buf, 32, 
-				"[%3u, %3u, %3u, %3u] @ %02u:%02u", 
-				redValue, greenValue,blueValue, whiteValue,
-				hour, minute
-			);
-			return std::unique_ptr<char[]>(buf);
-		}
+	/// Allocates C-style string representing entry data.
+	/// Format: `[255, 255, 255, 255] @ 12:00`.
+	std::unique_ptr<char[]> Entry::toCString() const {
+		char* buf = new char[32]; 
+		snprintf(
+			buf, 32, 
+			"[%3u, %3u, %3u, %3u] @ %02u:%02u", 
+			redValue, greenValue,blueValue, whiteValue,
+			hour, minute
+		);
+		return std::unique_ptr<char[]>(buf);
+	}
 
-		inline bool isValid() const {
-			return hour < 24;
-		}
+	inline bool Entry::isValid() const {
+		return hour < 24;
+	}
 
-		const static Entry invalid;
-	};
 	const Entry Entry::invalid {99, 99, 99, 99, 99, 99};
-	static_assert(sizeof(Entry) == 8, "Structures saved on EEPROM must have guaranted size!");
 
 	Entry nextEntry;
 	Entry previousEntry;
@@ -141,16 +87,16 @@ namespace SmoothTimedPWM {
 	}
 
 	void setup() {
-		if (CHECK_LOG_LEVEL(SmoothTimedPWM, LEVEL_INFO)) {
-			LOG_INFO(SmoothTimedPWM, "Setuping... Entries:");
+		if (CHECK_LOG_LEVEL(Lighting, LEVEL_INFO)) {
+			LOG_INFO(Lighting, "Setuping... Entries:");
 			for (unsigned int i = 0; i < maxEntriesCount; i++) {
 				Entry entry;
 				EEPROM.get(entriesEEPROMOffset + i * sizeof(Entry), entry);
 				if (entry.isValid()) {
-					LOG_INFO(SmoothTimedPWM, "%2u. %s", i, entry.toCString().get());
+					LOG_INFO(Lighting, "%2u. %s", i, entry.toCString().get());
 				}
 				else {
-					LOG_INFO(SmoothTimedPWM, "%2u. invalid", i);
+					LOG_INFO(Lighting, "%2u. invalid", i);
 				}
 			}
 		}
@@ -198,7 +144,7 @@ namespace SmoothTimedPWM {
 		}
 
 		if (!nextFound) {
-			LOG_WARN(SmoothTimedPWM, "No valid entries, disabling.");
+			LOG_WARN(Lighting, "No valid entries, disabling.");
 			disable = true;
 			return;
 		}
@@ -222,7 +168,7 @@ namespace SmoothTimedPWM {
 
 		// If there is only one entry...
 		if (!previousFound) {
-			LOG_DEBUG(SmoothTimedPWM, "Only one valid entry (will result in static color).");
+			LOG_DEBUG(Lighting, "Only one valid entry (will result in static color).");
 			previousEntry = nextEntry;
 		}
 
@@ -230,8 +176,8 @@ namespace SmoothTimedPWM {
 		nextTime = nextEntry.getTimepointScheduledAfter(now);
 		previousTime = previousEntry.getTimepointScheduledBefore(now);
 
-		LOG_DEBUG(SmoothTimedPWM, "Previous entry: %s (%us ago)", previousEntry.toCString().get(), previousTime);
-		LOG_DEBUG(SmoothTimedPWM, "Next entry:     %s (in %us)",  previousEntry.toCString().get(), nextTime);
+		LOG_DEBUG(Lighting, "Previous entry: %s (%us ago)", previousEntry.toCString().get(), previousTime);
+		LOG_DEBUG(Lighting, "Next entry:     %s (in %us)",  previousEntry.toCString().get(), nextTime);
 	}
 
 	void update() {
@@ -251,13 +197,13 @@ namespace SmoothTimedPWM {
 			while (!nextEntry.isValid());
 			nextTime = nextEntry.getTimepointScheduledAfter(now);
 
-			LOG_DEBUG(SmoothTimedPWM, "Next entry: %s (in %us)",  previousEntry.toCString().get(), nextTime);
+			LOG_DEBUG(Lighting, "Next entry: %s (in %us)",  previousEntry.toCString().get(), nextTime);
 		}
 
 		// Update values
 		float ratio = static_cast<float>(currentTime - previousTime) / (nextTime - previousTime);
 
-		LOG_TRACE(SmoothTimedPWM, "ratio: %5.3f = %u / %u", ratio, currentTime - previousTime, nextTime - previousTime);
+		LOG_TRACE(Lighting, "ratio: %5.3f = %u / %u", ratio, currentTime - previousTime, nextTime - previousTime);
 
 		if (previousEntry.redValue == nextEntry.redValue) {
 			redPWM.set(previousEntry.redValue);
@@ -285,15 +231,15 @@ namespace SmoothTimedPWM {
 		}
 	}
 
-	void setColorsHandler() {
-		const char* cstr = server.arg("plain").c_str();
+	void handleSetColors() {
+		const char* cstr = webServer.arg("plain").c_str();
 		unsigned short length = strlen(cstr);
 		unsigned short offset = 0;
 
-		LOG_DEBUG(SmoothTimedPWM, "setColorsHandler() length: %u, content: `%s`", length, cstr);
+		LOG_DEBUG(Lighting, "handleSetColors() length: %u, content: `%s`", length, cstr);
 
 		if (length < 14) {
-			server.send(500, WEB_CONTENT_TYPE_TEXT_PLAIN, F("Not enough data sent"));
+			webServer.send(500, WEB_CONTENT_TYPE_TEXT_PLAIN, F("Not enough data sent"));
 			return;
 		}
 
@@ -328,10 +274,10 @@ namespace SmoothTimedPWM {
 			EEPROM.put(entriesEEPROMOffset + entriesCount * sizeof(Entry), entry);
 			entriesCount++;
 
-			LOG_DEBUG(SmoothTimedPWM, "setColorsHandler() Entry[%2u] -> %s", entriesCount, entry.toCString().get());
+			LOG_DEBUG(Lighting, "handleSetColors() Entry[%2u] -> %s", entriesCount, entry.toCString().get());
 
 			if (offset >= length) {
-				LOG_TRACE(SmoothTimedPWM, "setColorsHandler() offset >= length (%u >= %u)", offset, length);
+				LOG_TRACE(Lighting, "handleSetColors() offset >= length (%u >= %u)", offset, length);
 				break;
 			}
 		}
@@ -343,16 +289,16 @@ namespace SmoothTimedPWM {
 		}
 
 		if (entriesCount == maxEntriesCount && offset < length - 4) {
-			LOG_DEBUG(SmoothTimedPWM, "setColorsHandler() Too much entries sent, discarding");
+			LOG_DEBUG(Lighting, "handleSetColors() Too much entries sent, discarding");
 		}
 
 		// Run setup to update after change
 		setup();
 
-		server.send(200);
+		webServer.send(200);
 	}
 
-	void getColorsHandler() {
+	void handleGetColors() {
 		constexpr unsigned int buffLen = 1024;
 		char response[buffLen];
 		unsigned short offset = 0;
@@ -382,7 +328,7 @@ namespace SmoothTimedPWM {
 			);
 			entriesCount++;
 			if (ret < 0 || static_cast<unsigned int>(ret) >= max) {
-				server.send(500, WEB_CONTENT_TYPE_TEXT_PLAIN, F("Response buffer exceeded"));
+				webServer.send(500, WEB_CONTENT_TYPE_TEXT_PLAIN, F("Response buffer exceeded"));
 				return;
 			}
 			offset += ret;
@@ -396,12 +342,12 @@ namespace SmoothTimedPWM {
 			response[offset++] = ']';
 		}
 		response[offset++] = 0;
-		server.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
+		webServer.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, response);
 	}
 
-	void resetColorsHandler() {
+	void handleResetColors() {
 		reset();
 		setup();
-		server.send(200);
+		webServer.send(200);
 	}
 }

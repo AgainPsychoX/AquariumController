@@ -1,11 +1,16 @@
 {
 	"name": "prepare-web-arduino",
-	"version": "0.7.0",
+	"version": "0.9.0",
 	"description": "Script to prepare static web content for easy including in Arduino project.",
-	"author": "Patryk 'PsychoX' Ludwikowski <psychoxivi+arduino@gmail.com>",
+	"author": "Patryk 'PsychoX' Ludwikowski <psychoxivi+embedded@gmail.com>",
 	"license": "MIT",
 	"main": "prepareWebArduino.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"dependencies": {
+		"commander": "^9.1.0",
+		"fs-extra": "^10.0.1",
+		"require-json5": "^1.2.0"
 	}
 }

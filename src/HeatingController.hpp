@@ -1,9 +1,8 @@
-#pragma once // Note: Included directly in certain place.
+#pragma once
 
-#include <Arduino.h>
-#include <EEPROM.h>
+#include "common.hpp"
 
-namespace HeatingController {
+namespace Heating {
 	constexpr byte pin = 0;
 	constexpr unsigned int EEPROMOffset = 0x00A;
 
@@ -37,11 +36,11 @@ namespace HeatingController {
 	void update(float temperature) {
 		if (maxTemperature <= temperature) {
 			heatOff();
-			LOG_DEBUG(HeatingController, "Heat off (max %.2f <= %.2f current)", maxTemperature, temperature);
+			LOG_DEBUG(Heating, "Heat off (max %.2f <= %.2f current)", maxTemperature, temperature);
 		}
 		else if (temperature <= minTemperature) {
 			heatOn();
-			LOG_DEBUG(HeatingController, "Heat on (current %.2f <= %.2f min)", temperature, minTemperature);
+			LOG_DEBUG(Heating, "Heat on (current %.2f <= %.2f min)", temperature, minTemperature);
 		}
 	}
 	void setup() {

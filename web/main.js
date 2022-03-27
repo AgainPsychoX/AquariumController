@@ -547,7 +547,7 @@ fetch(`${baseHost}/config`)
 			manualDoseButton.addEventListener('click', async () => {
 				manualDoseButton.disabled = true;
 				await saveMineralsPumpsSettings();
-				await fetch(`${baseHost}/test?pump=${key}&action=dose`);
+				await fetch(`${baseHost}/mineralsPumps?key=${key}&action=dose`);
 				setTimeout(() => {
 					manualDoseButton.disabled = false;
 				}, 5000);
@@ -562,11 +562,11 @@ fetch(`${baseHost}/config`)
 					return;
 				}
 
-				await fetch(`${baseHost}/test?pump=${key}&action=on`);
+				await fetch(`${baseHost}/mineralsPumps?key=${key}&action=on`);
 
 				alert("Pompowanie trwa. Kliknij OK po przepompowaniu wyznaczonej ilości.");
 
-				const stats = await fetch(`${baseHost}/test?pump=${key}&action=off`).then(r => r.json());
+				const stats = await fetch(`${baseHost}/mineralsPumps?key=${key}&action=off`).then(r => r.json());
 				const pump = stats.mineralsPumps[key];
 				const duration = stats.currentTime - pump.lastStartTime;
 				const c = duration / mL;

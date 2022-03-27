@@ -1,9 +1,7 @@
-#pragma once // Note: Included directly in certain place.
+#pragma once
+#include "common.hpp"
 
-#include <Arduino.h>
-#include <EEPROM.h>
-
-namespace MineralsPumpsController {
+namespace MineralsPumps {
 	enum Mineral : uint8_t {
 		Ca = 0,
 		Mg = 1,
@@ -12,7 +10,7 @@ namespace MineralsPumpsController {
 	};
 
 	/// Settings for mineral pump (EEPROM structure).
-	struct MineralPumpSettings {
+	struct PumpSettings {
 		/// Calibration value is defined by time (in miliseconds) required to pump one milliliter.
 		float calibration;
 
@@ -30,10 +28,10 @@ namespace MineralsPumpsController {
 			return std::unique_ptr<char[]>(buf);
 		}
 	};
-	static_assert(sizeof(MineralPumpSettings) == 8, "Structures saved on EEPROM must have guaranted size!");
+	static_assert(sizeof(PumpSettings) == 8, "Structures saved on EEPROM must have guaranted size!");
 
-	struct MineralPump {
-		MineralPumpSettings settings;
+	struct Pump {
+		PumpSettings settings;
 		unsigned long duration = 0;
 		unsigned long lastStartTime = 0;
 		uint8_t pin;
@@ -70,7 +68,7 @@ namespace MineralsPumpsController {
 			return lastStartTime + duration;
 		}
 
-		MineralPump(uint8_t pin) : pin(pin) {}
+		Pump(uint8_t pin) : pin(pin) {}
 
 		void set(bool active) {
 			this->active = active;
@@ -96,7 +94,7 @@ namespace MineralsPumpsController {
 	};
 
 	// Pins using IO expander
-	MineralPump pumps[Mineral::Count] = {
+	Pump pumps[Mineral::Count] = {
 		{ 2 },
 		{ 5 },
 		{ 4 },
@@ -108,19 +106,19 @@ namespace MineralsPumpsController {
 
 	void saveSettings() {
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
-			EEPROM.put(EEPROMOffset + i * sizeof(MineralPumpSettings), pumps[i].settings);
+			EEPROM.put(EEPROMOffset + i * sizeof(PumpSettings), pumps[i].settings);
 		}
 	}
 	void readSettings() {
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
-			EEPROM.get(EEPROMOffset + i * sizeof(MineralPumpSettings), pumps[i].settings);
+			EEPROM.get(EEPROMOffset + i * sizeof(PumpSettings), pumps[i].settings);
 			pumps[i].setMilliliters(pumps[i].settings.milliliters);
 		}
 	}
 	void printSettings() {
-		LOG_INFO(MineralsPumpsController, "Settings:");
+		LOG_INFO(MineralsPumps, "Settings:");
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
-			LOG_INFO(MineralsPumpsController, "%s: %s", pumpsKeys[i], pumps[i].settings.toCString(3));
+			LOG_INFO(MineralsPumps, "%s: %s", pumpsKeys[i], pumps[i].settings.toCString(3));
 		}
 	}
 
@@ -137,14 +135,14 @@ namespace MineralsPumpsController {
 		if (currentMillis - previousEnabling > 59000) {
 			currentMillis = previousEnabling = millis();
 
-			LOG_TRACE(MineralsPumpsController, "update()");
+			LOG_TRACE(MineralsPumps, "update()");
 
 			// Mark pumps to be queued
 			DateTime now = rtc.now();
 			for (uint8_t i = 0; i < Mineral::Count; i++) {
 				if (pumps[i].shouldStart(now)) {
 					pumps[i].queued = true;
-					LOG_DEBUG(MineralsPumpsController, "Pump #%u (%s) queued", i, pumpsKeys[i]);
+					LOG_DEBUG(MineralsPumps, "Pump #%u (%s) queued", i, pumpsKeys[i]);
 				}
 			}
 
@@ -156,7 +154,7 @@ namespace MineralsPumpsController {
 						pumps[i].set(true);
 						pumping = true;
 						which = static_cast<Mineral>(i);
-						LOG_DEBUG(MineralsPumpsController, "Pump #%u (%s) started", i, pumpsKeys[i]);
+						LOG_DEBUG(MineralsPumps, "Pump #%u (%s) started", i, pumpsKeys[i]);
 						break;
 					}
 				}
@@ -168,7 +166,7 @@ namespace MineralsPumpsController {
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
 			if (pumps[i].shouldStop()) {
 				pumps[i].set(false);
-				LOG_DEBUG(MineralsPumpsController, "Pump #%u (%s) stopped", i, pumpsKeys[i]);
+				LOG_DEBUG(MineralsPumps, "Pump #%u (%s) stopped", i, pumpsKeys[i]);
 			}
 			anyPumping = anyPumping || pumps[i].active;
 		}
@@ -177,5 +175,54 @@ namespace MineralsPumpsController {
 	void setup() {
 		readSettings();
 		printSettings();
+	}
+
+	void handleWebEndpoint() {
+		constexpr unsigned int bufferLength = 256;
+		char buffer[bufferLength];
+
+		const String& key = webServer.arg("key");
+		if (!key.isEmpty()) {
+			const String& action = webServer.arg("action");
+			const bool on     = action.equals("on");
+			const bool dose   = action.equals("dose");
+			const bool active = on || dose;
+			const bool set    = active || action.equals("off");
+			const bool manual = on && !dose;
+			if (set) {
+				Mineral which = Mineral::Count;
+				/**/ if (key.equals("ca")) which = Mineral::Ca;
+				else if (key.equals("mg")) which = Mineral::Mg;
+				else if (key.equals("kh")) which = Mineral::KH;
+				if (which != Mineral::Count) {
+					pumps[which].manual = manual;
+					pumps[which].set(active);
+				}
+			}
+			int ret = snprintf(
+				buffer, bufferLength,
+				"{"
+					"\"mineralsPumps\":{"
+						"\"ca\":{\"lastStartTime\":%lu},"
+						"\"mg\":{\"lastStartTime\":%lu},"
+						"\"kh\":{\"lastStartTime\":%lu}"
+					"},"
+					"\"currentTime\":%lu"
+				"}",
+				pumps[Mineral::Ca].lastStartTime,
+				pumps[Mineral::Mg].lastStartTime,
+				pumps[Mineral::KH].lastStartTime,
+				millis()
+			);
+			if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
+				webServer.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
+			}
+			else {
+				webServer.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
+			}
+			return;
+		}
+
+		webServer.send(200);
 	}
 };

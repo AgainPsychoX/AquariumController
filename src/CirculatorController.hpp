@@ -1,9 +1,8 @@
-#pragma once // Note: Included directly in certain place.
+#pragma once
 
-#include <Arduino.h>
-#include <EEPROM.h>
+#include "common.hpp"
 
-namespace CirculatorController {
+namespace Circulator {
 	constexpr byte ioExpanderPin = 3;
 	constexpr unsigned int EEPROMOffset = 0x00C;
 
@@ -41,13 +40,13 @@ namespace CirculatorController {
 				nextUpdateTime = currentTime + pauseSeconds * 1000;
 				active = false;
 				ioExpander.digitalWrite(ioExpanderPin, HIGH);
-				LOG_DEBUG(CirculatorController, "pause util %u", nextUpdateTime);
+				LOG_DEBUG(Circulator, "pause util %u", nextUpdateTime);
 			}
 			else {
 				nextUpdateTime = currentTime + activeSeconds * 1000;
 				active = true;
 				ioExpander.digitalWrite(ioExpanderPin, LOW);
-				LOG_DEBUG(CirculatorController, "active util %u", nextUpdateTime);
+				LOG_DEBUG(Circulator, "active util %u", nextUpdateTime);
 			}
 		}
 	}

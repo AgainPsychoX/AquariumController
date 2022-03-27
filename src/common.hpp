@@ -117,3 +117,19 @@ struct LogLevelForComponent
 	(byte & 0x01 ? '1' : '0') 
 
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Some global externs for misc stuff
+
+#include <PCF8574.hpp> // IO extender
+#include <DS3231.h> // RTC
+#include <ESP8266WebServer.h>
+#include <EEPROM.h>
+#include "webEncoded/WebStaticContent.hpp"
+
+// Initialized in main
+extern PCF8574 ioExpander;
+extern RTClib rtc;
+extern ESP8266WebServer webServer;
+
+

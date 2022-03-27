@@ -1,17 +1,24 @@
 {
 	"cSpell.words": [
+		"Appcache",
 		"cyrkulatora",
 		"datetime",
+		"fontobject",
 		"FPSTR",
 		"HTTPC",
+		"mimetable",
+		"opentype",
+		"pgmspace",
 		"Pinout",
 		"preparewebarduino",
 		"PROGMEM",
 		"RSSI",
+		"sfnt",
 		"snprintf",
 		"ssid"
 	],
 	"files.associations": {
+		"data.json": "jsonc",
 		"*.log": "vt100",
 		"cstddef": "cpp",
 		"memory": "cpp",

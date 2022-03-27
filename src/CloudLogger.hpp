@@ -1,6 +1,6 @@
-#pragma once // Note: Included directly in certain place.
+#pragma once
 
-#include <Arduino.h>
+#include "common.hpp"
 #include <WiFiClientSecure.h>
 #include <ESP8266HTTPClient.h>
 

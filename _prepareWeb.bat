@@ -1,1 +1,1 @@
-node .\scripts\prepareWebArduino\prepareWebArduino.js --no-timestamp --no-debug-prints --output-directory src/webEncoded/
+node .\scripts\prepareWebArduino\prepareWebArduino.js --no-timestamp --debug-print-snippet "LOG_DEBUG(Web, ""Serving static /${path}"")" --no-debug-prints --clean --output-directory src/webEncoded/

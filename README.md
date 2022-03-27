@@ -137,14 +137,95 @@ Web content (`web` directory) is prepared by `prepareWebArduino.js` script into 
 
 #### Web API
 
-| Request                  | Description                                                                        |
-|--------------------------|------------------------------------------------------------------------------------|
-| `/status`                | Returns JSON with status object.                                                   |
-| `/config` (`?=...`)      | Updates config values (from query params) and/or returns JSON with current config. |
-| `/saveEEPROM`            | Saves any config and persistent data (incl. colors cycles) to EEPROM.              |
-| `/getColorsCycle`        | Returns JSON with colors cycle object.                                             |
-| `/setColorsCycle` (POST) | Updates colors cycle from encoded value send via POST (see sources for details).   |
-| `/resetColorCycle`       | Resets colors cycle to defaults.                                                   |
+| Request                    | Description                                                                              |
+|----------------------------|------------------------------------------------------------------------------------------|
+| `/status`                  | Returns JSON with status object.                                                         |
+| `/config` (`?=...`)        | Updates config values (from query params) and/or returns JSON with current config.       |
+| `/saveEEPROM`              | Saves any config and persistent data (incl. colors cycles) to EEPROM.                    |
+|                            |                                                                                          |
+| `/getColorsCycle`          | Returns JSON with colors cycle object.                                                   |
+| `/setColorsCycle` (POST)   | Updates colors cycle from encoded value send via POST (see sources for details).         |
+| `/resetColorCycle`         | Resets colors cycle to defaults.                                                         |
+|                            |                                                                                          |
+| `/mineralsPumps` (`?=...`) | Allows for minerals pumps controlling (handy for calibration) and returns run time info. |
+|                            |                                                                                          |
+
+##### GET `/status`
+
+Reports status.
+
+Returns:
+```json
+{
+	"waterTemperature": 22.01,
+	"rtcTemperature": 22.25,
+	"phLevel": 7.11,
+	
+	"red": 0,
+	"green": 127,
+	"blue": 255,
+	"white": 0,
+	
+	"isHeating": true,
+	"isRefilling": false,
+	"isRefillTankLow": false,
+	
+	"timestamp": "2022-03-13T16:01:17",
+	"rssi": -67
+}
+```
+
+##### GET `/config`
+
+Allow changing configuration via passed arguments in query.
+
+Arguments (should be joined with `&` to form querystring):
+```
+timestamp=2004-02-12T15:19:21
+
+red=255
+green=255
+blue=255
+white=255
+forceColors=true
+
+heatingMinTemperature=22.25
+heatingMaxTemperature=23.75
+
+circulatorActiveTime=10
+circulatorPauseTime=10
+
+mineralsPumps.ca.time=570
+mineralsPumps.ca.mL=10
+mineralsPumps.ca.c=4200.013
+mineralsPumps.mg.time=570
+mineralsPumps.mg.mL=10
+mineralsPumps.mg.c=4200.013
+mineralsPumps.kh.time=570
+mineralsPumps.kh.mL=10
+mineralsPumps.kh.c=4200.013
+
+cloudLoggingInterval=10
+```
+
+Returns:
+```json
+{
+	"heatingMinTemperature": 22.25,
+	"heatingMaxTemperature": 23.75,
+	
+	"circulatorActiveTime": 10,
+	"circulatorPauseTime":  10,
+
+	"cloudLoggingInterval": 10,
+
+	"mineralsPumps":{
+		"ca": { "time": 570, "mL": 10 },
+		"mg": { "time": 570, "mL": 10 },
+		"kh": { "time": 570, "mL": 10 }
+	}
+}
+```
 
 #### I2C addresses
 
@@ -202,12 +283,11 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ Refactor files into multiple `.cpp` (to avoid recompiling everything every time).
-+ Refactor web server into separate file too.
-+ Rename PWM controller to lights controller.
-+ Write API docs.
 + Working pH meter...
++ Add pH meter calibration (save on EEPROM)
 + Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
++ Write rest of API docs.
++ Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
 + Use SSL sessions (to avoid partially lag of cloud logger).
 	
 	See https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/bearssl-client-secure-class.html?highlight=WiFiClientSecure
@@ -228,20 +308,19 @@ There is HTTPS client running every configured interval sending the request with
 + Add fancy animations on demand for LEDs.
 + Auto-update SSL certs fingerprints?
 + Proper seeding code, incl. WiFi.
-+ RESTful API.
++ RESTful API (see https://github.com/cesanta/mjson)
 + Show total running time (from last power-on), under current time at web portal.
++ Try overclock ESP into 160 MHz.
 + Chart link/button for last hour/day should show error if no data to show.
 + Add loading/error information for line charts.
 + Cloud logger buffer (configurable; in such case charts could get data from status too?).
-+ Add recessiveness to `prepareWebArduino`.
++ Don't remove unchanged files at `prepareWebArduino` (support directory tree).
 + Add `--watch` to `prepareWebArduino`.
-+ Use `snprintf_P` in place of `snprintf`? SRAM is faster than PROGMEM tho.
-+ Try overclock ESP into 160 MHz.
 + Water wind controller (nie ma PWM, ale może krótkie pulsy?).
 + Exportable/importable colour cycle configuration (as JSON/encoded?) .
 + Saving/reading colour cycle presets from browser storage.
 + Refactor DS3231 library (lighter one, use full DS3231 instead pieces).
-+ Use `mimetable.cpp` for MIME types?
++ Use `mimetable.cpp` for MIME types? No. Not until ESP8266 core impl fixes 3-4 times copying. Also, `getContentType` is copying even more XD.
 + Standard Arduino/ESP core libraries are bad... 
 
 	- Stream using int instead char?
@@ -249,5 +328,7 @@ There is HTTPS client running every configured interval sending the request with
 	- Inconsistent namings.
 	- Formatting even worse than C++ STD.
 	- Paying for unused features.
+
++ Use `snprintf_P` in place of `snprintf`? SRAM is faster than PROGMEM tho.
 
 

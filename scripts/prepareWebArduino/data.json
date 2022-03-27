@@ -1,0 +1,28 @@
+{
+	"mimeTypes": {
+		"html":			"text/html",
+		"htm":			"text/html",
+		"txt":			"text/plain",
+		"css":			"text/css",
+		"js":			"application/javascript",
+		"json":			"application/json",
+		// "xml":			"text/xml",
+		"png":			"image/png",
+		// "gif":			"image/gif",
+		"jpg":			"image/jpeg",
+		"jpeg":			"image/jpeg",
+		// "ico":			"image/x-icon",
+		// "svg":			"image/svg+xml",
+		// "ttf":			"application/x-font-ttf",
+		// "otf":			"application/x-font-opentype",
+		// "woff":			"application/font-woff",
+		// "woff2":		"application/font-woff2",
+		// "eot":			"application/vnd.ms-fontobject",
+		// "sfnt":			"application/font-sfnt",
+		// "zip":			"application/zip",
+		// "gz":			"application/x-gzip",
+		// "pdf":			"application/pdf",
+		// "appcache":		"text/cache-manifest",
+		"default":		"application/octet-stream"
+	}
+}
