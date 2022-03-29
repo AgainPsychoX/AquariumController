@@ -152,7 +152,7 @@ void setup() {
 			"{"
 				"\"waterTemperature\":%.2f,"
 				"\"rtcTemperature\":%.2f,"
-				"\"phLevel\":%.6f,"
+				"\"phLevel\":%.6f,\"phRaw\":%u,"
 				"\"red\":%d,\"green\":%d,\"blue\":%d,\"white\":%d,"
 				"\"isHeating\":%d,"
 				"\"isRefilling\":%d,"
@@ -162,7 +162,7 @@ void setup() {
 			"}",
 			waterTemperature,
 			ds3231.getTemperature(),
-			phMeter::readAverage(),
+			phMeter::getAverage(), phMeter::getRawAverage(),
 			redPWM.get(), greenPWM.get(), bluePWM.get(), whitePWM.get(),
 			Heating::isHeating(),
 			WaterLevel::refillingRequired,
@@ -228,12 +228,10 @@ void setup() {
 			constexpr uint8_t keyOffset = 14;
 
 			for (uint8_t i = 0; i < Mineral::Count; i++) {
-				const char* key = pumpsKeys[i];
-				arg[keyOffset + 0] = key[0];
-				arg[keyOffset + 1] = key[1];
-				const String& value = webServer.arg(arg);
-				if (!value.isEmpty()) {
-					const unsigned short time = atoi(value.c_str());
+				arg[keyOffset + 0] = pumpsKeys[i][0];
+				arg[keyOffset + 1] = pumpsKeys[i][1];
+				if (const String& str = webServer.arg(arg); !str.isEmpty()) {
+					const unsigned short time = atoi(str.c_str());
 					pumps[i].settings.hour   = time / 60;
 					pumps[i].settings.minute = time % 60;
 					changes = true;
@@ -243,12 +241,10 @@ void setup() {
 			arg.replace(F(".time"), F(".mL"));
 
 			for (uint8_t i = 0; i < Mineral::Count; i++) {
-				const char* key = pumpsKeys[i];
-				arg[keyOffset + 0] = key[0];
-				arg[keyOffset + 1] = key[1];
-				const String& value = webServer.arg(arg);
-				if (!value.isEmpty()) {
-					const uint8_t mL = atoi(value.c_str());
+				arg[keyOffset + 0] = pumpsKeys[i][0];
+				arg[keyOffset + 1] = pumpsKeys[i][1];
+				if (const String& str = webServer.arg(arg); !str.isEmpty()) {
+					const uint8_t mL = atoi(str.c_str());
 					pumps[i].setMilliliters(mL);
 					changes = true;
 				}
@@ -257,12 +253,10 @@ void setup() {
 			arg.replace(F(".mL"), F(".c"));
 
 			for (uint8_t i = 0; i < Mineral::Count; i++) {
-				const char* key = pumpsKeys[i];
-				arg[keyOffset + 0] = key[0];
-				arg[keyOffset + 1] = key[1];
-				const String& value = webServer.arg(arg);
-				if (!value.isEmpty()) {
-					const float c = atof(value.c_str());
+				arg[keyOffset + 0] = pumpsKeys[i][0];
+				arg[keyOffset + 1] = pumpsKeys[i][1];
+				if (const String& str = webServer.arg(arg); !str.isEmpty()) {
+					const float c = atof(str.c_str());
 					pumps[i].setCalibration(c);
 					changes = true;
 				}
@@ -271,6 +265,39 @@ void setup() {
 			if (changes) {
 				MineralsPumps::saveSettings();
 				MineralsPumps::printSettings();
+			}
+		}
+
+		// Handle pH meter config
+		{
+			bool changes = false;
+
+			String arg;
+			arg.reserve(24);
+			arg = F("phMeter.points.0.adc");
+			constexpr uint8_t indexOffset = 15;
+
+			for (uint8_t i = 0; i < 3; i++) {
+				arg[indexOffset] = '0' + i;
+				if (const String& value = webServer.arg(arg); !value.isEmpty()) {
+					phMeter::settings.points[i].adc = atoi(value.c_str());
+					changes = true;
+				}
+			}
+
+			arg.replace(F("adc"), F("pH"));
+
+			for (uint8_t i = 0; i < 3; i++) {
+				arg[indexOffset] = '0' + i;
+				if (const String& value = webServer.arg(arg); !value.isEmpty()) {
+					phMeter::settings.points[i].pH = atof(value.c_str());
+					changes = true;
+				}
+			}
+
+			if (changes) {
+				phMeter::saveSettings();
+				phMeter::printSettings();
 			}
 		}
 
@@ -283,11 +310,11 @@ void setup() {
 		const auto& pump_ca = MineralsPumps::pumps[MineralsPumps::Mineral::Ca];
 		const auto& pump_mg = MineralsPumps::pumps[MineralsPumps::Mineral::Mg];
 		const auto& pump_kh = MineralsPumps::pumps[MineralsPumps::Mineral::KH];
-		constexpr unsigned int bufferLength = 256;
+		constexpr unsigned int bufferLength = 400;
 		char buffer[bufferLength];
 		int ret = snprintf_P(
 			buffer, bufferLength,
-			"{"
+			PSTR("{"
 				"\"heatingMinTemperature\":%.2f,"
 				"\"heatingMaxTemperature\":%.2f,"
 				"\"circulatorActiveTime\":%u,"
@@ -297,8 +324,17 @@ void setup() {
 					"\"mg\":{\"time\":%u,\"mL\":%u},"
 					"\"kh\":{\"time\":%u,\"mL\":%u}"
 				"},"
+				"\"phMeter\":{"
+					"\"points\":["
+						"{\"adc\":%u,\"pH\":%.3f},"
+						"{\"adc\":%u,\"pH\":%.3f},"
+						"{\"adc\":%u,\"pH\":%.3f}"
+					"],"
+					"\"adcMax\":%u,"
+					"\"adcVoltage\":%.2f"
+				"},"
 				"\"cloudLoggingInterval\":%u"
-			"}",
+			"}"),
 			Heating::minTemperature,
 			Heating::maxTemperature,
 			Circulator::activeSeconds,
@@ -306,6 +342,10 @@ void setup() {
 			(pump_ca.settings.hour * 60) + pump_ca.settings.minute, pump_ca.getMilliliters(),
 			(pump_mg.settings.hour * 60) + pump_mg.settings.minute, pump_mg.getMilliliters(),
 			(pump_kh.settings.hour * 60) + pump_kh.settings.minute, pump_kh.getMilliliters(),
+			phMeter::settings.points[0].adc, phMeter::settings.points[0].pH,
+			phMeter::settings.points[1].adc, phMeter::settings.points[1].pH,
+			phMeter::settings.points[2].adc, phMeter::settings.points[2].pH,
+			phMeter::analogMax, phMeter::analogMaxVoltage,
 			static_cast<unsigned int>(CloudLogger::interval / 1000)
 		);
 		if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
@@ -316,9 +356,6 @@ void setup() {
 		}
 
 		// As somebody connected, remove flag
-		if (showIP) {
-			lcd.clear();
-		}
 		showIP = false;
 	});
 
@@ -347,31 +384,7 @@ void setup() {
 	if constexpr (debugLevel >= LEVEL_DEBUG) {
 		// Hidden API for testing propuses
 		webServer.on(F("/test"), []() {
-			// const int adcValue = analogRead(phMeter::pin);
-			// const float voltage = (float)adcValue / 1024 * 3.3f;
-			// const float pH = 7.f - (2.5f - voltage) * phMeter::calibration;
-
-			// constexpr unsigned int bufferLength = 128;
-			// char buffer[bufferLength];
-			// int ret = snprintf(
-			// 	buffer, bufferLength,
-			// 	"{"
-			// 		"\"adc\":%i,"
-			// 		"\"voltage\":%.4f,"
-			// 		"\"pH\":%.4f,"
-			// 		"\"currentTime\":%lu"
-			// 	"}",
-			// 	adcValue,
-			// 	voltage,
-			// 	pH,
-			// 	millis()
-			// );
-			// if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
-			// 	webServer.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
-			// }
-			// else {
-			// 	webServer.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
-			// }
+			webServer.send(204);
 		});
 	}
 
@@ -402,7 +415,7 @@ void loop() {
 			CloudLogger::push({
 				.waterTemperature = waterTemperature,
 				.rtcTemperature = ds3231.getTemperature(),
-				.phLevel = phMeter::readAverage(),
+				.phLevel = phMeter::getAverage(),
 			});
 		}
 	}
@@ -452,15 +465,17 @@ void loop() {
 
 		Heating::update(waterTemperature);
 
-		// Show water termometer on LCD
-		{
-			char buf[5];
-			snprintf(buf, 5, "%.1f", waterTemperature);
-			buf[4] = 0;
-			lcd.setCursor(20 - 6, 0);
+		// Show water termometer or pH level on LCD
+		lcd.setCursor(20 - 6, 0);
+		if (currentMillis % 32768 >= 16384) {
+			char buf[8];
+			sprintf(buf, "%.1f%cC", waterTemperature, 0b11011111);
 			lcd.print(buf);
-			lcd.write(0b11011111);
-			lcd.write('C');
+		}
+		else {
+			char buf[8];
+			sprintf(buf, "pH %.2f", phMeter::getAverage());
+			lcd.print(buf);
 		}
 
 		lcd.setCursor(0, 1);
@@ -471,7 +486,6 @@ void loop() {
 			lcd.print(WiFi.localIP().toString().c_str());
 			if (millis() > showIPtimeout) {
 				showIP = false;
-				lcd.clear();
 			}
 		}
 		else {
@@ -496,8 +510,8 @@ void loop() {
 				lcd.print(F("                "));
 			}
 
-			//lcd.setCursor(20 - 1, 1);
-			lcd.print("   ");
+			lcd.setCursor(20 - 4, 1);
+			lcd.print(F("   "));
 
 			// Show heating status
 			lcd.write(Heating::isHeating() ? 'G' : ' '); // G - Grzałka

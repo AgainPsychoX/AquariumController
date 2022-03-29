@@ -39,8 +39,10 @@ label {
 }
 label span {
 	margin: 0 2px;
-	margin-right: 4px;
 	text-align: end;
+}
+label span:first-of-type {
+	margin-right: 4px;
 }
 
 .small {
@@ -98,6 +100,39 @@ section {
 	}
 }
 
+dialog {
+	margin: auto;
+	display: block;
+	opacity: 0;
+	transition: opacity 0.3s;
+	width: 100%;
+	min-width: 30vw;
+	min-height: 20vw;
+	border: none;
+}
+dialog::backdrop {
+	opacity: 0;
+	transition: opacity 0.3s;
+	background: rgba(0, 0, 0, 0.3);
+}
+dialog[open] {
+	opacity: 1;
+	box-shadow: 0 0 16px -4px rgba(0, 0, 0, 0.7);
+}
+dialog[open]::backdrop {
+	opacity: 1;
+}
+dialog[open].closing::backdrop,
+dialog[open].closing {
+	opacity: 0;
+}
+@media (min-width: calc(960px - 32px)) {
+	dialog {
+		width: 480px;
+		margin: auto;
+	}
+}
+
 
 
 
@@ -121,6 +156,27 @@ section {
 		width: calc(1200px - 32px);
 	}
 } */
+
+.loose-table {
+	border-spacing: 0;
+}
+.loose-table th {
+	font-weight: normal;
+}
+.loose-table th,
+.loose-table td {
+	padding: 2px 8px;
+	border: 1px black solid;
+	border-left: none;
+	border-top: none;
+}
+.loose-table th:last-of-type,
+.loose-table td:last-of-type {
+	border-right: none;
+}
+.loose-table tbody > tr:last-of-type > td {
+	border-bottom: none;
+}
 
 .header-with-aside {
 	display: flex;
@@ -323,6 +379,17 @@ output[name=waterLevel].active {
 	#minerals .grid {
 		grid-template-columns: 1fr;
 	}
+}
+
+
+
+dialog#ph-calibration input[type=number] {
+	width: 56px;
+}
+dialog#ph-calibration table {
+	margin: 0 auto;
+	margin-bottom: 8px;
+	text-align: center;
 }
 
 

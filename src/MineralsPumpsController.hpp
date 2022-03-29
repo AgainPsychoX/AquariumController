@@ -179,11 +179,7 @@ namespace MineralsPumps {
 	}
 
 	void handleWebEndpoint() {
-		constexpr unsigned int bufferLength = 256;
-		char buffer[bufferLength];
-
-		const String& key = webServer.arg("key");
-		if (!key.isEmpty()) {
+		if (const String& key = webServer.arg("key"); !key.isEmpty()) {
 			const String& action = webServer.arg("action");
 			const bool on     = action.equals("on");
 			const bool dose   = action.equals("dose");
@@ -200,30 +196,30 @@ namespace MineralsPumps {
 					pumps[which].set(active);
 				}
 			}
-			int ret = snprintf(
-				buffer, bufferLength,
-				"{"
-					"\"mineralsPumps\":{"
-						"\"ca\":{\"lastStartTime\":%lu},"
-						"\"mg\":{\"lastStartTime\":%lu},"
-						"\"kh\":{\"lastStartTime\":%lu}"
-					"},"
-					"\"currentTime\":%lu"
-				"}",
-				pumps[Mineral::Ca].lastStartTime,
-				pumps[Mineral::Mg].lastStartTime,
-				pumps[Mineral::KH].lastStartTime,
-				millis()
-			);
-			if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
-				webServer.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
-			}
-			else {
-				webServer.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
-			}
-			return;
 		}
 
-		webServer.send(200);
+		constexpr unsigned int bufferLength = 256;
+		char buffer[bufferLength];
+		int ret = snprintf(
+			buffer, bufferLength,
+			"{"
+				"\"mineralsPumps\":{"
+					"\"ca\":{\"lastStartTime\":%lu},"
+					"\"mg\":{\"lastStartTime\":%lu},"
+					"\"kh\":{\"lastStartTime\":%lu}"
+				"},"
+				"\"currentTime\":%lu"
+			"}",
+			pumps[Mineral::Ca].lastStartTime,
+			pumps[Mineral::Mg].lastStartTime,
+			pumps[Mineral::KH].lastStartTime,
+			millis()
+		);
+		if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
+			webServer.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
+		}
+		else {
+			webServer.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
+		}
 	}
 };

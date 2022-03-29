@@ -60,6 +60,23 @@ function handleFetchResult(promise, successMessage = 'Wysłano!', failureMessage
 	;
 }
 
+document
+	.querySelectorAll('dialog')
+	.forEach(dialog => {
+		dialog.addEventListener('cancel', e => {
+			if (dialog.classList.contains('closing')) return;
+			e.preventDefault();
+			dialog.classList.add('closing');
+		});
+		dialog.addEventListener('transitionend', () => {
+			if (dialog.classList.contains('closing')) {
+				dialog.close();
+				dialog.classList.remove('closing');
+			}
+		});
+	})
+;
+
 
 
 
@@ -351,9 +368,16 @@ const booleanStatusBits = [
 						case 'rtcTemperature':
 							document.querySelector(`output[name=${key}]`).innerText = value + '°C';
 							break;
-						case 'phLevel':
-							document.querySelector('output[name=phLevel]').innerText = value.toFixed(2);
+						case 'phLevel': {
+							const adc = state['phRaw'];
+							const output = document.querySelector('output[name=phLevel]');
+							output.innerText = value.toFixed(2); 
+							output.title = `pH: ${value} adc: ${adc} (avg)`;
+							if (phCalibrationDialog.open) {
+								phCalibrationDialog.update({ adc, pH: value })
+							}
 							break;
+						}
 						case 'rssi': {
 							rssiOutput.classList.remove('error');
 							rssiOutput.style.color = colorForRSSI(value);
@@ -497,15 +521,110 @@ document.querySelector('button[name=synchronize-time]').addEventListener('click'
 	handleFetchResult(fetch(`${baseHost}/config?timestamp=${string}`));
 });
 
-// document.querySelector('button[name=ph-calibrate]').addEventListener('click', async () => {
-// 	// TODO: ...
-// });
+const phCalibrationDialog = document.querySelector('dialog#ph-calibration');
+let phMeter;
+phCalibrationDialog.getPoints = () => {
+	const points = [];
+	for (const row of phCalibrationDialog.querySelectorAll('.points tbody tr').values()) {
+		points.push({
+			adc: parseInt(row.querySelector('input[name=adc]').value),
+			pH: parseFloat(row.querySelector('input[name=pH]').value),
+		});
+	}
+	return points.sort((a, b) => a.adc - b.adc);
+};
+phCalibrationDialog.update = (status) => {
+	const toVoltage = adc => adc / phMeter.adcMax * phMeter.adcVoltage;
+	const calculate = (adc, points) => {
+		points ||= phMeter.points;
+		const i = adc <= points[1].adc ? 0 : 1;
+		const p0 = points[i + 0];
+		const p1 = points[i + 1];
+		const {y0, x0} = { y0: p0.pH, x0: p0.adc };
+		const {y1, x1} = { y1: p1.pH, x1: p1.adc };
+		const a = (y0 - y1) / (x0 - x1);
+		const b = y0 - a * x0;
+		return a * adc + b;
+	};
+
+	const newPoints = phCalibrationDialog.getPoints();
+	
+	phCalibrationDialog.readings.normal = {
+		adc: status.adc,
+		voltage: toVoltage(status.adc).toFixed(2) + 'V',
+		pH: calculate(status.adc).toFixed(2),
+		pH_new: calculate(status.adc, newPoints).toFixed(2),
+	};
+
+	const samples = phCalibrationDialog.samples;
+	samples.push(status.adc);
+	const average = Math.round(samples.reduce((a, b) => a + b) / samples.length);
+	phCalibrationDialog.readings.average = {
+		adc: average,
+		voltage: toVoltage(average).toFixed(2) + 'V',
+		pH: calculate(average).toFixed(2),
+		pH_new: calculate(average, newPoints).toFixed(2),
+	};
+
+	for (const row of phCalibrationDialog.querySelectorAll('.readings tbody tr').values()) {
+		const source = row.querySelector('input[name=source]').value;
+		for (const name of ['adc', 'voltage', 'pH', 'pH_new']) {
+			row.querySelector(`output[name=${name}]`).innerText = phCalibrationDialog.readings[source][name];
+		}
+	}
+};
+{
+	const openButton = document.querySelector('button[name=ph-calibrate]');
+	openButton.addEventListener('click', () => {
+		const promise = fetch(`${baseHost}/config`)
+			.then((response) => response.json())
+			.then((state) => {
+				const template = phCalibrationDialog.querySelector('template');
+				const tbody = template.parentElement;
+				tbody.replaceChildren(template);
+				for (let i = 0; i < 3; i++) {
+					const data = state.phMeter.points[i];
+					const fragment = template.content.cloneNode(true);
+					fragment.querySelector('td').innerText = `${i + 1}.`;
+					const adcInput = fragment.querySelector('input[name=adc]');
+					const pHInput =  fragment.querySelector('input[name=pH]');
+					adcInput.value = data.adc;
+					pHInput.value = data.pH;
+					fragment.querySelector('button').addEventListener('click', e => {
+						e.preventDefault();
+						const source = phCalibrationDialog.querySelector('input[name=source]:checked').value;
+						adcInput.value = phCalibrationDialog.readings[source].adc;
+					})
+					tbody.append(fragment);
+				}
+				phMeter = state.phMeter;
+
+				phCalibrationDialog.showModal();
+			})
+		;
+		handleFetchResult(promise, '');
+	});
+	
+	phCalibrationDialog.samples = [];
+	phCalibrationDialog.readings = {};
+	
+	phCalibrationDialog.querySelector('button[name=save]').addEventListener('click', async (e) => {
+		phCalibrationDialog.classList.add('closing');
+
+		const querystring = phCalibrationDialog.getPoints()
+			.map((p, i) => `phMeter.points.${i}.adc=${p.adc}&phMeter.points.${i}.pH=${p.pH}`)
+			.join('&')
+		;
+		await handleFetchResult(fetch(`${baseHost}/config?${querystring}`));
+	});
+	phCalibrationDialog.querySelector('button[name=cancel]').addEventListener('click', async (e) => {
+		phCalibrationDialog.classList.add('closing');
+	});
+}
 
 // Load settings
 fetch(`${baseHost}/config`)
-	.then((response) => {
-		return response.json();
-	})
+	.then((response) => response.json())
 	.then((state) => {
 		for (let key in state) {
 			const value = state[key];

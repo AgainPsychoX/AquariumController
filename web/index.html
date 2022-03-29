@@ -210,9 +210,9 @@
 						<input type="time" step="1" min="00:00:05" max="02:00:00" name="cloudLoggingInterval" />
 					</label>
 				</div>
-				<!-- <div class="flex-evenly spaced">
+				<div class="flex-evenly spaced">
 					<button name="ph-calibrate">Kalibracja sensora pH</button>
-				</div> -->
+				</div>
 			</section>
 			<section id="save">
 				<h2>Zapisywanie ustawień</h2>
@@ -234,6 +234,76 @@
 			</section>
 		</div>
 	</main>
+	<dialog id="ph-calibration">
+		<h3>Kalibracja pH metru</h3>
+		<ul>
+			<li>
+				Przygotuj 2 lub 3 roztworów o znanych poziomach pH (pamiętaj o odpowiedniej temperaturze i dobrze rozmieszać).
+			</li>
+			<li>
+				Zanurzaj sondę pH w kolejnych roztworach. Pamiętaj, żeby między zanurzeniami wyczyścić sondę w wodzie dejonizowanej, by zapobiec mieszaniu się badanych roztworów.
+			</li>
+			<li>
+				Przy każdym zanurzeniu w badanym roztworze, po kilku lub kilkunastu sekundach (gdy odczytywana wartość się ustabilizuje) kliknij poniżej, żeby użyć próbki. Wpisz oczekiwaną wartość pH dla danej próbki.
+			</li>
+		</ul>
+		<h4>Odczyt</h4>
+		<table class="loose-table readings">
+			<thead>
+				<tr>
+					<th>Wybór</th>
+					<th>Źródło</th>
+					<th>Wartości</th>
+					<th>Napięcie</th>
+					<th>Stare pH</th>
+					<th>Nowe pH</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><input type="radio" name="source" value="normal"></td>
+					<td>Wartość</td>
+					<td><output name="adc">800</output></td>
+					<td><output name="voltage">2.3</output></td>
+					<td><output name="pH">7.42</output></td>
+					<td><output name="pH_new">7.01</output></td>
+				</tr>
+				<tr>
+					<td><input type="radio" name="source" value="average" checked></td>
+					<td>Średnia</td>
+					<td><output name="adc">800</output></td>
+					<td><output name="voltage">2.3</output></td>
+					<td><output name="pH">7.42</output></td>
+					<td><output name="pH_new">7.01</output></td>
+				</tr>
+			</tbody>
+		</table>
+		<h4>Próbki</h4>
+		<table class="loose-table points">
+			<thead>
+				<tr>
+					<th>Lp.</th>
+					<th>Odczyt</th>
+					<th>pH</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<template>
+					<tr>
+						<td>1.</td>
+						<td><input type="number" min="0" max="4096" name="adc" /></td>
+						<td><input type="number" min="0" max="14" step="0.01" name="pH" /></td>
+						<td><button name="select">Wybierz ↵</button></td>
+					</tr>
+				</template>
+			</tbody>
+		</table>
+		<div class="flex spaced" style="justify-content: end;">
+			<button name="save">Zapisz</button>
+			<button name="cancel">Anuluj</button>
+		</div>
+	</dialog>
 	<script src="https://d3js.org/d3.v4.min.js" onerror="alert('Nie można załadować biblioteki D3JS dla wykresów. Brak połączenia z internetem?')" defer></script>
 	<script type="text/javascript" src="charts.js" defer></script>
 	<script type="text/javascript" src="main.js" defer></script>

@@ -27,7 +27,7 @@ const defaultColorCycle = [
 ];
 
 const noise = (x, r = 0.3, e = 0.4, pi = 0.5) => Math.sin(x * r) + Math.sin(x * e * Math.E) + Math.sin(x * pi * Math.PI);
-const speed = 1 / 100;
+const speed = 1 / 1;
 const config = {
 	heatingMinTemperature: 21.75,
 	heatingMaxTemperature: 24.25,
@@ -40,6 +40,15 @@ const config = {
 		mg: {time: 9 * 60 + 25, mL: 25},
 		kh: {time: 9 * 60 + 30, mL: 30},
 	},
+	phMeter: {
+		points: [
+			{ adc: 712, pH: 9.18 },
+			{ adc: 851, pH: 6.86 },
+			{ adc: 1008, pH: 4.01 },
+		],
+		adcMax: 1024,
+		adcVoltage: 3.2,
+	},
 };
 let red = 127;
 let green = 127;
@@ -48,21 +57,29 @@ let white = 127;
 let colorsCycle = defaultColorCycle.map(e => Object.assign({}, e));
 let airTemperature;
 let waterTemperature = 22.0;
+let phReal;
+let phRaw;
 let phLevel;
 let isHeating = false;
-
-const mineralsPumps = {
-	ca: { lastStartTime: 0, mL: 0 },
-	mg: { lastStartTime: 0, mL: 0 },
-	kh: { lastStartTime: 0, mL: 0 },
-};
 
 const airToWaterTemperatureConversionRatio = 0.0001;
 setInterval(() => {
 	const x = Date.now() * speed;
 	airTemperature = 22 + noise(x * 0.001) * 2;
 	waterTemperature = (airTemperature * airToWaterTemperatureConversionRatio + waterTemperature) / (airToWaterTemperatureConversionRatio + 1),
-	phLevel = 7.6 + noise(x * 0.0001) / 3 / 2;
+
+	phReal = 7.6 + noise(x * 0.0001) / 3 / 2;
+	phRaw = Math.round((phReal - 7) / 7 * 50 + 800);
+	{
+		const i = phRaw <= config.phMeter.points[1].adc ? 0 : 1;
+		const p0 = config.phMeter.points[i + 0];
+		const p1 = config.phMeter.points[i + 1];
+		const {y0, x0} = { y0: p0.pH, x0: p0.adc };
+		const {y1, x1} = { y1: p1.pH, x1: p1.adc };
+		const a = (y0 - y1) / (x0 - x1);
+		const b = y0 - a * x0;
+		phLevel = a * phRaw + b;
+	}
 
 	if (config.heatingMaxTemperature < waterTemperature) {
 		isHeating = false;
@@ -81,8 +98,6 @@ setInterval(() => {
 		blue =  (7 * blue + 128)  / 8;
 		white = (7 * white + 196) / 8;
 	}
-	
-	console.log(`Air: ${airTemperature}\tWater: ${waterTemperature}\tphLevel: ${phLevel}\t`);
 }, 500);
 
 app.get('/status', (req, res) => {
@@ -91,7 +106,8 @@ app.get('/status', (req, res) => {
 		res.json({
 			waterTemperature: Math.round(waterTemperature * 100) / 100, // cut off .##, step = 0.01
 			rtcTemperature: Math.round(airTemperature * 4) / 4, // step = 0.25
-			phLevel: Math.round(phLevel * 100) / 100,
+			phLevel: phLevel,
+			phRaw: phRaw,
 			red: Math.round(red),
 			green: Math.round(green),
 			blue: Math.round(blue),
@@ -134,31 +150,26 @@ app.get('/config', (req, res) => {
 	}
 	for (const key of ['ca', 'mg', 'kh']) {
 		if (req.query[`mineralPumps.${key}.time`]) {
-			config.mineralsPumps[key].time = parseInt(config.mineralsPumps[key].time);
+			config.mineralsPumps[key].time = parseInt(req.query[`mineralPumps.${key}.time`]);
 		}
 		if (req.query[`mineralPumps.${key}.mL`]) {
-			config.mineralsPumps[key].mL = parseInt(config.mineralsPumps[key].mL);
+			config.mineralsPumps[key].mL = parseInt(req.query[`mineralPumps.${key}.mL`]);
+		}
+	}
+	for (let i = 0; i < 3; i++) {
+		if (req.query[`phMeter.points.${i}.adc`]) {
+			config.phMeter.points[i].adc = parseInt(req.query[`phMeter.points.${i}.adc`]);
+		}
+		if (req.query[`phMeter.points.${i}.pH`]) {
+			config.phMeter.points[i].pH = parseFloat(req.query[`phMeter.points.${i}.pH`]);
 		}
 	}
 	res.status(200);
 	res.json(config);
 });
 app.get('/test', (req, res) => {
-	const time = Date.now() - 1647000000000;
-	if (req.query.pump) {
-		const key = req.query.pump;
-		if (req.query.action == 'on') {
-			mineralsPumps[key].lastStartTime = time;
-		}
-		else if (req.query.action == 'off') {
-			mineralsPumps[key].mL = config.mineralsPumps[key].mL + (Math.random() - 0.5);
-		}
-	}
-	res.status(200);
-	res.json({
-		currentTime: time,
-		mineralsPumps,
-	});
+	res.status(204);
+	res.json({});
 });
 app.get('/saveEEPROM', (req, res) => {
 	res.sendStatus(200);

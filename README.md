@@ -159,7 +159,9 @@ Returns:
 {
 	"waterTemperature": 22.01,
 	"rtcTemperature": 22.25,
+
 	"phLevel": 7.1234,
+	"phRaw": 1024,
 	
 	"red": 0,
 	"green": 127,
@@ -205,6 +207,13 @@ mineralsPumps.kh.time=570
 mineralsPumps.kh.mL=10
 mineralsPumps.kh.c=4200.013
 
+phMeter.points.0.adc
+phMeter.points.0.pH
+phMeter.points.1.adc
+phMeter.points.1.pH
+phMeter.points.2.adc
+phMeter.points.2.pH
+
 cloudLoggingInterval=10
 ```
 
@@ -219,10 +228,20 @@ Returns:
 
 	"cloudLoggingInterval": 10,
 
-	"mineralsPumps":{
+	"mineralsPumps": {
 		"ca": { "time": 570, "mL": 10 },
 		"mg": { "time": 570, "mL": 10 },
 		"kh": { "time": 570, "mL": 10 }
+	},
+
+	"phMeter": {
+		"points": [
+			{ "adc": 800, "pH": 7.11 },
+			{ "adc": 800, "pH": 7.11 },
+			{ "adc": 800, "pH": 7.11 }
+		],
+		"adcMax": 1024,
+		"adcVoltage": 3.2,
 	}
 }
 ```
@@ -273,6 +292,16 @@ Size: `0x1000` (4kB)
 
 	Three pumps, total of 24 bytes.
 
+* `0x220` - `0x230` - pH meter settings (calibration).
+
+	Format:
+	* 3 calibration points, each 8 bytes:
+		* 4 bytes - pH level (float).
+		* 2 bytes - ADC raw value read for given pH.
+		* 2 bytes padding.
+	* 1 byte for interpolation method selection enum.
+	* The rest is padding.
+
 #### Cloud logger
 
 There is HTTPS client running every configured interval sending the request with readings sample to endpoint. As the endpoint, [Google Apps Script with `POST` handler](https://script.google.com/d/1MDprbKPWUi1Kno0x6o2YVEOm3dEMGe_TI3PfwGwiD1rW21l4PcxbYVoA/edit?usp=sharing) is used. Data is stored into [Google Spreadsheet document](https://docs.google.com/spreadsheets/d/1OeXW_dhXnBcgqe8lflZT3rbdBoCy9qz3bURGQ95YH9o/edit?usp=sharing#gid=581325308). 
@@ -283,8 +312,6 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ Add pH meter calibration (save on EEPROM)
-+ Alternate pH level and temperature displaying on LCD 
 + Prevent recompilation of `*.cpp` when updating static web files.
 + Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
 + Write rest of API docs.
@@ -297,7 +324,9 @@ There is HTTPS client running every configured interval sending the request with
 
 	See https://github.com/esp8266/Arduino/blob/448486a4c9db1e74a60fa922c8388116c01c5f2b/libraries/ESP8266WiFi/examples/BearSSL_Validation/BearSSL_Validation.ino
 
++ Use long average for cloud logging pH level?
 + Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
++ Restructure EEPROM.
 + Store Wi-Fi settings (SSID/password) in EEPROM. 
 + Store cloud logger settings in EEPROM (incl. URL and fingerprint).
 + Password protection for web panel (store in EEPROM).
@@ -308,10 +337,12 @@ There is HTTPS client running every configured interval sending the request with
 + Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
 + Add fancy animations on demand for LEDs.
 + Auto-update SSL certs fingerprints?
-+ Proper seeding code, incl. WiFi.
++ Proper seeding code (detect with `#include <coredecls.h> // crc32` or https://pl.wikipedia.org/wiki/Adler-32), incl. WiFi (http://arduino.esp8266.com/Arduino/versions/2.0.0/doc/libraries.html#wifi-esp8266wifi-library)
 + RESTful API (see https://github.com/cesanta/mjson)
 + Show total running time (from last power-on), under current time at web portal.
 + Try overclock ESP into 160 MHz.
++ Add polynomial/Newton interpolation for calculating ph level.
++ Temperature compensation for ph calculation.
 + Chart link/button for last hour/day should show error if no data to show.
 + Add loading/error information for line charts.
 + Cloud logger buffer (configurable; in such case charts could get data from status too?).
