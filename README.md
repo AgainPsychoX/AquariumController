@@ -312,7 +312,6 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ Prevent recompilation of `*.cpp` when updating static web files.
 + Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
 + Write rest of API docs.
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
@@ -324,7 +323,6 @@ There is HTTPS client running every configured interval sending the request with
 
 	See https://github.com/esp8266/Arduino/blob/448486a4c9db1e74a60fa922c8388116c01c5f2b/libraries/ESP8266WiFi/examples/BearSSL_Validation/BearSSL_Validation.ino
 
-+ Use long average for cloud logging pH level?
 + Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
 + Restructure EEPROM.
 + Store Wi-Fi settings (SSID/password) in EEPROM. 

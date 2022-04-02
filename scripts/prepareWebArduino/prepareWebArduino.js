@@ -189,7 +189,7 @@ ${aboutMeMessage}
 					return (`
 extern const char WEB_${constNamePathPart}_PATH[] PROGMEM;
 extern const char WEB_${constNamePathPart}_CONTENT[] PROGMEM;
-constexpr short int WEB_${constNamePathPart}_CONTENT_LENGTH = ${entry.compressedSize};`
+constexpr unsigned short int WEB_${constNamePathPart}_CONTENT_LENGTH = ${entry.compressedSize};`
 					);
 				}).join('') + 
 				(`

@@ -16,6 +16,7 @@
 #include "CloudLogger.hpp"
 #include "MineralsPumpsController.hpp"
 #include "phMeter.hpp"
+#include "webEncoded/WebStaticContent.hpp"
 
 PCF8574 ioExpander {0x26};
 

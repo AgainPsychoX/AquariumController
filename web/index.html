@@ -101,29 +101,17 @@
 				<h3>Cykl dobowy oświetlania</h3>
 				<figure class="colors-cycle">
 					<table>
-						<colgroup>
-							<col/>
-							<col/>
-							<col/>
-							<col/>
-							<col style="width:20%"/>
-							<col/>
-							<col/>
-							<col/>
-							<col/>
-							<col/>
-						</colgroup>  
 						<thead>
 							<tr>
 								<th></th>
 								<th></th>
 								<th></th>
-								<th></th>
-								<th>Punkt doby (godzina)</th>
+								<th title="Godzina o której wybrane ustawienia będą w pełni zastosowane.">Punkt&nbsp;doby</th>
 								<th>Czerwone</th>
 								<th>Zielone</th>
 								<th>Niebieskie</th>
 								<th>Białe</th>
+								<th></th>
 								<th></th>
 							</tr>
 						</thead>
@@ -133,7 +121,6 @@
 									<td><button name="remove" title="Usuń wpis">⨯</button></td>
 									<td><button name="move-up" title="Przesuń wpis do góry">↑</button></td>
 									<td><button name="move-down" title="Przesuń wpis w dół">↓</button></td>
-									<td><button name="clone" title="Sklonuj wpis">📋</button></td>
 									<td><input type="time" step="60" value="12:00" /></td>
 									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="red" /></td>
 									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="green" /></td>
@@ -141,6 +128,7 @@
 									<td><input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="white" /></td>
 									<td><button name="preview" title="Wyślij ustawienie z wpisu do podglądu">Pokaż</button></td>
 									<td><button name="set-from-current" title="Ustaw wpis z obecnych ustawień">↵</button></td>
+									<td><button name="clone" title="Sklonuj wpis">📋</button></td>
 								</tr>
 							</template>
 						</tbody>
@@ -248,57 +236,61 @@
 			</li>
 		</ul>
 		<h4>Odczyt</h4>
-		<table class="loose-table readings">
-			<thead>
-				<tr>
-					<th>Wybór</th>
-					<th>Źródło</th>
-					<th>Wartości</th>
-					<th>Napięcie</th>
-					<th>Stare pH</th>
-					<th>Nowe pH</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td><input type="radio" name="source" value="normal"></td>
-					<td>Wartość</td>
-					<td><output name="adc">800</output></td>
-					<td><output name="voltage">2.3</output></td>
-					<td><output name="pH">7.42</output></td>
-					<td><output name="pH_new">7.01</output></td>
-				</tr>
-				<tr>
-					<td><input type="radio" name="source" value="average" checked></td>
-					<td>Średnia</td>
-					<td><output name="adc">800</output></td>
-					<td><output name="voltage">2.3</output></td>
-					<td><output name="pH">7.42</output></td>
-					<td><output name="pH_new">7.01</output></td>
-				</tr>
-			</tbody>
-		</table>
-		<h4>Próbki</h4>
-		<table class="loose-table points">
-			<thead>
-				<tr>
-					<th>Lp.</th>
-					<th>Odczyt</th>
-					<th>pH</th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody>
-				<template>
+		<figure>
+			<table class="loose-table readings">
+				<thead>
 					<tr>
-						<td>1.</td>
-						<td><input type="number" min="0" max="4096" name="adc" /></td>
-						<td><input type="number" min="0" max="14" step="0.01" name="pH" /></td>
-						<td><button name="select">Wybierz ↵</button></td>
+						<th>Wybór</th>
+						<th>Źródło</th>
+						<th>Wartości</th>
+						<th>Stare pH</th>
+						<th>Nowe pH</th>
+						<th>Napięcie</th>
 					</tr>
-				</template>
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					<tr>
+						<td><input type="radio" name="source" value="normal"></td>
+						<td>Wartość</td>
+						<td><output name="adc">800</output></td>
+						<td><output name="pH">7.42</output></td>
+						<td><output name="pH_new">7.01</output></td>
+						<td><output name="voltage">2.3</output></td>
+					</tr>
+					<tr>
+						<td><input type="radio" name="source" value="average" checked></td>
+						<td>Średnia</td>
+						<td><output name="adc">800</output></td>
+						<td><output name="pH">7.42</output></td>
+						<td><output name="pH_new">7.01</output></td>
+						<td><output name="voltage">2.3</output></td>
+					</tr>
+				</tbody>
+			</table>
+		</figure>
+		<h4>Próbki</h4>
+		<figure>
+			<table class="loose-table points">
+				<thead>
+					<tr>
+						<th>Lp.</th>
+						<th>Odczyt</th>
+						<th>pH</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					<template>
+						<tr>
+							<td>1.</td>
+							<td><input type="number" min="0" max="4096" name="adc" /></td>
+							<td><input type="number" min="0" max="14" step="0.01" name="pH" /></td>
+							<td><button name="select">Wybierz ↵</button></td>
+						</tr>
+					</template>
+				</tbody>
+			</table>
+		</figure>
 		<div class="flex spaced" style="justify-content: end;">
 			<button name="save">Zapisz</button>
 			<button name="cancel">Anuluj</button>

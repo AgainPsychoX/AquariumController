@@ -55,6 +55,12 @@ label span:first-of-type {
 input[type=number],
 input[type=time] {
 	font-family: 'Segoe UI', monospace;
+	width: auto;
+	text-align: end;
+}
+
+figure {
+	overflow-x: auto;
 }
 
 
@@ -97,39 +103,6 @@ section {
 		padding: 8px 12px;
 		/* padding-top: 8px; */
 		margin: 8px;
-	}
-}
-
-dialog {
-	margin: auto;
-	display: block;
-	opacity: 0;
-	transition: opacity 0.3s;
-	width: 100%;
-	min-width: 30vw;
-	min-height: 20vw;
-	border: none;
-}
-dialog::backdrop {
-	opacity: 0;
-	transition: opacity 0.3s;
-	background: rgba(0, 0, 0, 0.3);
-}
-dialog[open] {
-	opacity: 1;
-	box-shadow: 0 0 16px -4px rgba(0, 0, 0, 0.7);
-}
-dialog[open]::backdrop {
-	opacity: 1;
-}
-dialog[open].closing::backdrop,
-dialog[open].closing {
-	opacity: 0;
-}
-@media (min-width: calc(960px - 32px)) {
-	dialog {
-		width: 480px;
-		margin: auto;
 	}
 }
 
@@ -216,6 +189,35 @@ dialog[open].closing {
 	margin: 4px;
 }
 
+dialog {
+	margin: auto;
+	width: 100%;
+	min-width: 30vw;
+	min-height: 20vw;
+	border: none;
+	box-shadow: 0 0 16px -4px rgba(0, 0, 0, 0.7);
+	opacity: 0;
+}
+dialog::backdrop {
+	background: rgba(0, 0, 0, 0.3);
+	opacity: 0;
+}
+dialog.open::backdrop,
+dialog.open {
+	opacity: 1;
+	transition: opacity .2s;
+}
+dialog.closing::backdrop,
+dialog.closing {
+	opacity: 0;
+	transition: opacity .2s;
+}
+@media (min-width: calc(960px - 32px)) {
+	dialog {
+		width: 480px;
+	}
+}
+
 
 
 
@@ -282,6 +284,11 @@ output[name=waterLevel].active {
 	grid-gap: 8px;
 	text-align: end;
 }
+#colors .grid span {
+	display: block;
+	font-size: smaller;
+	align-self: center;
+}
 #colors input[type=range] {
 	height: 24px;
 	background: #d3d3d3;
@@ -313,29 +320,65 @@ output[name=waterLevel].active {
 	background: GoldenRod;
 }
 
+#colors input[type=number] {
+	border: 1px solid gray;
+	border-radius: 2px;
+}
 #colors .grid input[type=number] {
 	display: inline-block;
-	line-height: 8px;
-	width: 48px;
+	width: 54px;
+}
+
+#colors input[type=number][name=red] {
+	box-shadow: inset 16px 0px 16px -16px firebrick;
+}
+#colors input[type=number][name=green] {
+	box-shadow: inset 16px 0px 16px -16px ForestGreen;
+}
+#colors input[type=number][name=blue] {
+	box-shadow: inset 16px 0px 16px -16px DodgerBlue;
+}
+#colors input[type=number][name=white] {
+	box-shadow: inset 16px 0px 16px -16px GoldenRod;
 }
 
 .colors-cycle table {
 	margin: 8px auto;
-	/* table-layout: fixed; */
 }
-.colors-cycle table input[type=time] {
-	display: block;
-	margin: auto;
-}
-.colors-cycle table input[type=number] {
-	display: block;
-	margin: auto;
-	width: 48px;
-	text-align: end;
-}
-.colors-cycle table th {
+.colors-cycle th {
 	font-size: small;
 	font-weight: normal;
+	vertical-align: bottom;
+}
+.colors-cycle input[type=number] {
+	width: 64px;
+}
+.colors-cycle button,
+.colors-cycle input {
+	height: 100%;
+	width: 100%;
+}
+@media (max-width: 560px) { 
+	.colors-cycle thead {
+		display: none;
+	}
+	.colors-cycle tbody tr {
+		display: grid;
+		grid-template-areas: "u t t c s p p . x"
+							 "d r r g g b b w w";
+		margin-bottom: 8px;
+	}
+	.colors-cycle tbody tr td:nth-child(1) { grid-area: x; }
+	.colors-cycle tbody tr td:nth-child(2) { grid-area: u; }
+	.colors-cycle tbody tr td:nth-child(3) { grid-area: d; }
+	.colors-cycle tbody tr td:nth-child(4) { grid-area: t; }
+	.colors-cycle tbody tr td:nth-child(5) { grid-area: r; }
+	.colors-cycle tbody tr td:nth-child(6) { grid-area: g; }
+	.colors-cycle tbody tr td:nth-child(7) { grid-area: b; }
+	.colors-cycle tbody tr td:nth-child(8) { grid-area: w; }
+	.colors-cycle tbody tr td:nth-child(9) { grid-area: p; }
+	.colors-cycle tbody tr td:nth-child(10) { grid-area: s; }
+	.colors-cycle tbody tr td:nth-child(11) { grid-area: c; }
 }
 
 .colors-cycle table tbody tr:first-of-type td:first-of-type button:first-of-type {

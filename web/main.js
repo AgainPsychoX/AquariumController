@@ -63,14 +63,22 @@ function handleFetchResult(promise, successMessage = 'Wysłano!', failureMessage
 document
 	.querySelectorAll('dialog')
 	.forEach(dialog => {
+		new MutationObserver((list, observer) => {
+			for (const mutation of list) {
+				if (typeof(mutation.oldValue) == 'object') {
+					dialog.classList.add('open');
+				}
+			}
+		}).observe(dialog, { attributeFilter: ['open'], attributeOldValue: true })
 		dialog.addEventListener('cancel', e => {
 			if (dialog.classList.contains('closing')) return;
 			e.preventDefault();
 			dialog.classList.add('closing');
 		});
-		dialog.addEventListener('transitionend', () => {
+		dialog.addEventListener('transitionend', e => {
 			if (dialog.classList.contains('closing')) {
 				dialog.close();
+				dialog.classList.remove('open');
 				dialog.classList.remove('closing');
 			}
 		});

@@ -95,7 +95,7 @@ constexpr uint32_t hashLogCompStr(const char (&str) [N]) {
 #include <DS3231.h> // RTC
 #include <ESP8266WebServer.h>
 #include <EEPROM.h>
-#include "webEncoded/WebStaticContent.hpp"
+#include "webEncoded/WebCommonUtils.hpp"
 
 // Initialized in main
 extern PCF8574 ioExpander;
