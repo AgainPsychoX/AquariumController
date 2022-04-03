@@ -429,9 +429,6 @@ void loop() {
 		WaterLevel::update();
 
 		phMeter::update();
-
-		// For debug & calibration
-		// LOG_TRACE(phMeter, "Raw: %4u Avg: %4u", phMeter::readRaw(), phMeter::readRawAverage());
 	}
 
 	UPDATE_EVERY(1000) {

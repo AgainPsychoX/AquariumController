@@ -312,20 +312,12 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
-+ Write rest of API docs.
-+ Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
-+ Use SSL sessions (to avoid partially lag of cloud logger).
-	
-	See https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/bearssl-client-secure-class.html?highlight=WiFiClientSecure
-
-+ Use X509 keys for SSL. Also maybe allow less secure, but faster SSL. 
-
-	See https://github.com/esp8266/Arduino/blob/448486a4c9db1e74a60fa922c8388116c01c5f2b/libraries/ESP8266WiFi/examples/BearSSL_Validation/BearSSL_Validation.ino
-
 + Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
 + Restructure EEPROM.
 + Store Wi-Fi settings (SSID/password) in EEPROM. 
++ Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
++ Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
++ Write rest of API docs.
 + Store cloud logger settings in EEPROM (incl. URL and fingerprint).
 + Password protection for web panel (store in EEPROM).
 + Add security token to cloud communication.
@@ -334,11 +326,12 @@ There is HTTPS client running every configured interval sending the request with
 + Circulator force run button.
 + Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
 + Add fancy animations on demand for LEDs.
-+ Auto-update SSL certs fingerprints?
 + Proper seeding code (detect with `#include <coredecls.h> // crc32` or https://pl.wikipedia.org/wiki/Adler-32), incl. WiFi (http://arduino.esp8266.com/Arduino/versions/2.0.0/doc/libraries.html#wifi-esp8266wifi-library)
 + RESTful API (see https://github.com/cesanta/mjson)
 + Show total running time (from last power-on), under current time at web portal.
 + Try overclock ESP into 160 MHz.
++ Use better web server library (https://github.com/me-no-dev/ESPAsyncWebServer).
++ Use HTTPS for web server.
 + Add polynomial/Newton interpolation for calculating ph level.
 + Temperature compensation for ph calculation.
 + Chart link/button for last hour/day should show error if no data to show.

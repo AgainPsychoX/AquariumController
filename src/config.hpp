@@ -15,4 +15,4 @@ USE_LOG_LEVEL(phMeter,          LEVEL_TRACE);
 const char ssid[] = "TP-LINK_Jacek";
 const char password[] = "kamildanielpatryk";
 
-#define CLOUDLOGGER_INSECURE 0
+#define CLOUDLOGGER_SECURE 0
