@@ -128,40 +128,34 @@ namespace MineralsPumps {
 
 	Mineral which = Mineral::Count;
 
-	void update() {
-		unsigned long currentMillis = millis();
+	void updateForStart() {
+		LOG_TRACE(MineralsPumps, "updateForStart()");
 
-		// Once every minute check if any pump should be started
-		static unsigned long previousEnabling = 0;
-		if (currentMillis - previousEnabling > 59000) {
-			currentMillis = previousEnabling = millis();
-
-			LOG_TRACE(MineralsPumps, "update()");
-
-			// Mark pumps to be queued
-			DateTime now = rtc.now();
-			for (uint8_t i = 0; i < Mineral::Count; i++) {
-				if (pumps[i].shouldStart(now)) {
-					pumps[i].queued = true;
-					LOG_DEBUG(MineralsPumps, "Pump #%u (%s) queued", i, pumpsKeys[i]);
-				}
-			}
-
-			// If not pumping, start next queued pump
-			if (!pumping) {
-				for (uint8_t i = 0; i < Mineral::Count; i++) {
-					if (pumps[i].queued) {
-						pumps[i].queued = false;
-						pumps[i].set(true);
-						pumping = true;
-						which = static_cast<Mineral>(i);
-						LOG_DEBUG(MineralsPumps, "Pump #%u (%s) started", i, pumpsKeys[i]);
-						break;
-					}
-				}
+		// Mark pumps to be queued
+		DateTime now = rtc.now();
+		for (uint8_t i = 0; i < Mineral::Count; i++) {
+			if (pumps[i].shouldStart(now)) {
+				pumps[i].queued = true;
+				LOG_DEBUG(MineralsPumps, "Pump #%u (%s) queued", i, pumpsKeys[i]);
 			}
 		}
 
+		// If not pumping, start next queued pump
+		if (!pumping) {
+			for (uint8_t i = 0; i < Mineral::Count; i++) {
+				if (pumps[i].queued) {
+					pumps[i].queued = false;
+					pumps[i].set(true);
+					pumping = true;
+					which = static_cast<Mineral>(i);
+					LOG_DEBUG(MineralsPumps, "Pump #%u (%s) started", i, pumpsKeys[i]);
+					break;
+				}
+			}
+		}
+	}
+
+	void updateForStop() {
 		// Always check if any pump is finishing, for more precise timings
 		bool anyPumping = false;
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
@@ -173,6 +167,7 @@ namespace MineralsPumps {
 		}
 		pumping = anyPumping;
 	}
+
 	void setup() {
 		readSettings();
 		printSettings();

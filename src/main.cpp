@@ -213,8 +213,8 @@ void setup() {
 			if (const String& str = webServer.arg("circulatorActiveTime"); !str.isEmpty()) { Circulator::activeSeconds = atoi(str.c_str()); changes = true; }
 			if (const String& str = webServer.arg("circulatorPauseTime");  !str.isEmpty()) { Circulator::pauseSeconds  = atoi(str.c_str()); changes = true; }
 			if (changes) {
-				Circulator::nextUpdateTime = millis() + 1000;
 				Circulator::saveSettings();
+				Circulator::printSettings();
 			}
 		}
 
@@ -407,7 +407,11 @@ void setup() {
 void loop() {
 	unsigned long currentMillis = millis();
 
-	MineralsPumps::update();
+	MineralsPumps::updateForStop();
+
+	UPDATE_EVERY(60000) {
+		MineralsPumps::updateForStart();
+	}
 
 	webServer.handleClient();
 
@@ -421,10 +425,10 @@ void loop() {
 		}
 	}
 
+	Circulator::update(currentMillis);
+
 	UPDATE_EVERY(500) {
 		Lighting::update();
-
-		Circulator::update();
 
 		WaterLevel::update();
 

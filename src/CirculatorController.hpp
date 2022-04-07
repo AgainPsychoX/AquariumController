@@ -4,53 +4,50 @@
 
 namespace Circulator {
 	constexpr byte ioExpanderPin = 3;
+
+	uint16_t activeSeconds;
+	uint16_t pauseSeconds;
+	bool active = false;
+
+	void set(bool active) {
+		Circulator::active = active;
+		ioExpander.digitalWrite(ioExpanderPin, !active);
+	}
+
 	constexpr unsigned int EEPROMOffset = 0x00C;
 
-	unsigned short activeSeconds = 0;
-	unsigned short pauseSeconds = 255;
-	bool active = false;
-	unsigned long int nextUpdateTime = 0;
-
 	void saveSettings() {
-		EEPROM.put(EEPROMOffset + 0, activeSeconds);
-		EEPROM.put(EEPROMOffset + 2, pauseSeconds);
+		EEPROM.put(EEPROMOffset + 0 * sizeof(uint16_t), activeSeconds);
+		EEPROM.put(EEPROMOffset + 1 * sizeof(uint16_t), pauseSeconds);
 	}
 	void readSettings() {
-		EEPROM.get(EEPROMOffset + 0, activeSeconds);
-		EEPROM.get(EEPROMOffset + 2, pauseSeconds);
+		EEPROM.get(EEPROMOffset + 0 * sizeof(uint16_t), activeSeconds);
+		EEPROM.get(EEPROMOffset + 1 * sizeof(uint16_t), pauseSeconds);
 	}
-	inline bool isActive() {
-		return active;
+	void printSettings() {
+		LOG_INFO(Circulator, "Settings: %u seconds active, %u seconds pause.", activeSeconds, pauseSeconds);
 	}
 
-	void update() {
-		if (pauseSeconds == 0) {
-			active = true;
-			ioExpander.digitalWrite(ioExpanderPin, LOW);
-			return;
-		}
-		if (activeSeconds == 0) {
-			active = false;
-			ioExpander.digitalWrite(ioExpanderPin, HIGH);
-			return;
-		}
-		unsigned long int currentTime = millis();
-		if (currentTime > nextUpdateTime) {
-			if (active) {
-				nextUpdateTime = currentTime + pauseSeconds * 1000;
-				active = false;
-				ioExpander.digitalWrite(ioExpanderPin, HIGH);
-				LOG_DEBUG(Circulator, "pause util %u", nextUpdateTime);
+	void update(unsigned long& currentMillis) {
+		static unsigned long lastUpdateMillis = 0;
+		if ((currentMillis - lastUpdateMillis) / 1000 > (active ? activeSeconds : pauseSeconds)) {
+			currentMillis = lastUpdateMillis = millis();
+
+			if (activeSeconds == 0) {
+				set(false);
+				return;
 			}
-			else {
-				nextUpdateTime = currentTime + activeSeconds * 1000;
-				active = true;
-				ioExpander.digitalWrite(ioExpanderPin, LOW);
-				LOG_DEBUG(Circulator, "active util %u", nextUpdateTime);
+			if (pauseSeconds == 0) {
+				set(true);
+				return;
 			}
+
+			set(!active);
 		}
 	}
+
 	void setup() {
 		readSettings();
+		printSettings();
 	}
 };
