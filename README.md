@@ -207,12 +207,12 @@ mineralsPumps.kh.time=570
 mineralsPumps.kh.mL=10
 mineralsPumps.kh.c=4200.013
 
-phMeter.points.0.adc
-phMeter.points.0.pH
-phMeter.points.1.adc
-phMeter.points.1.pH
-phMeter.points.2.adc
-phMeter.points.2.pH
+phMeter.points.0.adc=712
+phMeter.points.0.pH=9.20
+phMeter.points.1.adc=851
+phMeter.points.1.pH=6.88
+phMeter.points.2.adc=1008
+phMeter.points.2.pH=4.03
 
 cloudLoggingInterval=10
 ```
@@ -313,25 +313,48 @@ There is HTTPS client running every configured interval sending the request with
 ## TODO
 
 + Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
++ Add circulator night mode, with settable hour:minute.
++ Add feeding mode - circulator disable (and maybe special lighting?)
++ Try soft-PWM on io expander (rapid switching?).
 + Restructure EEPROM.
+
+	* 0x000-0x020 - empty
+	* 0x020-0x030 - temperatures, circulator
+	* 0x030-0x040 -	empty
+	* 0x040-0x060 - pH
+	* 0x060-0x080 - pumps
+	* 0x080-0x100 - lights (16 entries?)
+	* 0x100-0x200 - empty
+	* 0x200-0x280 - 
+		+ 32b ssid, 
+		+ 32b passwd, 
+		+ 4b ip
+		+ 1b mask & flags (5 bits mask length, always ap, ap on fail, hidden ap; if mask < 7 then automatic ip/gate/dns)
+		+ 3b gateway (first byte the same as ip)
+		+ 8b dns 1 & 2,
+		+ 48 auth base64('login:passwd')
+	* 0x280-0x300 - logger url (up to 128)
+	* 0x300-0x310 - 15 secret string + \0, is logger enabled = (last byte == 0)
+	* 0x800-0x1000 - cloud endpoint cert (0x560+)
+
 + Store Wi-Fi settings (SSID/password) in EEPROM. 
 + Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
++ Make `/config` endpoint use proper GET/POST to avoid lag of printing so much when only setting.
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
++ RESTful API (see https://github.com/cesanta/mjson)
 + Write rest of API docs.
-+ Store cloud logger settings in EEPROM (incl. URL and fingerprint).
-+ Password protection for web panel (store in EEPROM).
 + Add security token to cloud communication.
++ Store cloud logger settings in EEPROM (incl. URL and secret).
 + Include cloud endpoint code (Google App Scripts) here.
-+ Fit colors cycle configuration on mobile nicely, somehow.
 + Circulator force run button.
 + Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
 + Add fancy animations on demand for LEDs.
 + Proper seeding code (detect with `#include <coredecls.h> // crc32` or https://pl.wikipedia.org/wiki/Adler-32), incl. WiFi (http://arduino.esp8266.com/Arduino/versions/2.0.0/doc/libraries.html#wifi-esp8266wifi-library)
-+ RESTful API (see https://github.com/cesanta/mjson)
 + Show total running time (from last power-on), under current time at web portal.
 + Try overclock ESP into 160 MHz.
 + Use better web server library (https://github.com/me-no-dev/ESPAsyncWebServer).
 + Use HTTPS for web server.
++ Use some authorization for web panel config setting.
 + Add polynomial/Newton interpolation for calculating ph level.
 + Temperature compensation for ph calculation.
 + Chart link/button for last hour/day should show error if no data to show.
@@ -339,7 +362,6 @@ There is HTTPS client running every configured interval sending the request with
 + Cloud logger buffer (configurable; in such case charts could get data from status too?).
 + Don't remove unchanged files at `prepareWebArduino` (support directory tree).
 + Add `--watch` to `prepareWebArduino`.
-+ Water wind controller (nie ma PWM, ale może krótkie pulsy?).
 + Exportable/importable colour cycle configuration (as JSON/encoded?) .
 + Saving/reading colour cycle presets from browser storage.
 + Refactor DS3231 library (lighter one, use full DS3231 instead pieces).

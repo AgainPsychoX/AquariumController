@@ -83,7 +83,7 @@
 						</label>
 					</div>
 				</div>
-				<div class="grid">
+				<figure class="grid">
 					<span>Czerwone:</span>
 					<input type="range" min="0" max="255" value="0" step="1" name="red" />
 					<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="red" />
@@ -96,8 +96,7 @@
 					<span>Białe:</span>
 					<input type="range" min="0" max="255" value="0" step="1" name="white" />
 					<input type="number" min="0" max="255" value="0" step="1" title="Wartość surowa" name="white" />
-				</div>
-				<br/>
+				</figure>
 				<h3>Cykl dobowy oświetlania</h3>
 				<figure class="colors-cycle">
 					<table>
@@ -184,8 +183,10 @@
 								<input type="number" min="0" max="250" step="1" value="50">
 								<span>mL</span>
 							</label>
-							<button name="manual-dose">Jedna dawka manualnie</button>
-							<button name="calibrate">Kalibracja</button>
+							<div class="flex-center spaced">
+								<button name="manual-dose">Jedna dawka manualnie</button>
+								<button name="calibrate">Kalibracja</button>
+							</div>
 						</div>
 					</template>
 				</div>
@@ -195,17 +196,17 @@
 				<div class="flex-evenly spaced">
 					<label>
 						<span>Częstotliwość wysyłania odczytów do chmury:</span>
-						<input type="time" step="1" min="00:00:05" max="02:00:00" name="cloudLoggingInterval" />
+						<input type="time" step="1" min="00:00:10" max="02:00:00" name="cloudLoggingInterval" />
 					</label>
 				</div>
-				<div class="flex-evenly spaced">
+				<div class="flex-center spaced">
+					<button name="synchronize-time">Synchronizuj czas</button>
 					<button name="ph-calibrate">Kalibracja sensora pH</button>
 				</div>
 			</section>
 			<section id="save">
 				<h2>Zapisywanie ustawień</h2>
 				<div class="flex-center spaced">
-					<button name="synchronize-time">Synchronizuj czas</button>
 					<button name="save-eeprom">Zapisz ustawienia na EEPROM</button>
 				</div>
 			</section>

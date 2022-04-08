@@ -21,21 +21,27 @@ a:hover {
 	color: skyblue;
 }
 
-h1, h2, h3, h4, p, ul, ol {
+h1, h2, h3, h4, p, ul, ol, figure, label {
 	margin: 0 8px 8px 0px;
-	text-align: justify;
 	clear: both;
+}
+h1, h2, h3, h4, p, ul, ol {
+	text-align: justify;
 }
 h1, h2, h3, h4, h5, h6 {
 	font-weight: 500;
 	text-align: left;
 }
 
+figure {
+	overflow-x: auto;
+}
+
 label {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
-	justify-content: center
+	align-items: baseline;
+	justify-content: center;
 }
 label span {
 	margin: 0 2px;
@@ -43,6 +49,14 @@ label span {
 }
 label span:first-of-type {
 	margin-right: 4px;
+}
+label input + span {
+	margin-left: 4px;
+	text-align: left;
+}
+label input[type=radio],
+label input[type=checkbox] {
+	transform: translate(0px, 1px);
 }
 
 .small {
@@ -57,10 +71,6 @@ input[type=time] {
 	font-family: 'Segoe UI', monospace;
 	width: auto;
 	text-align: end;
-}
-
-figure {
-	overflow-x: auto;
 }
 
 
@@ -243,6 +253,7 @@ dialog.closing {
 	display: grid;
 	grid-template-columns: auto 1fr;
 	align-items: center;
+	margin: 0;
 }
 #status .grid output {
 	text-align: start;
@@ -280,7 +291,7 @@ output[name=waterLevel].active {
 
 #colors .grid {
 	display: grid;
-	grid-template-columns: 0.2fr 1.5fr 0.02fr;
+	grid-template-columns: auto 1fr auto;
 	grid-gap: 8px;
 	text-align: end;
 }
@@ -343,7 +354,7 @@ output[name=waterLevel].active {
 }
 
 .colors-cycle table {
-	margin: 8px auto;
+	margin: 0px auto;
 }
 .colors-cycle th {
 	font-size: small;

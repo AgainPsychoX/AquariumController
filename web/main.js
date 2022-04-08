@@ -529,6 +529,7 @@ document.querySelector('button[name=synchronize-time]').addEventListener('click'
 	handleFetchResult(fetch(`${baseHost}/config?timestamp=${string}`));
 });
 
+// pH mater
 const phCalibrationDialog = document.querySelector('dialog#ph-calibration');
 let phMeter;
 phCalibrationDialog.getPoints = () => {
@@ -585,8 +586,8 @@ phCalibrationDialog.update = (status) => {
 	const openButton = document.querySelector('button[name=ph-calibrate]');
 	openButton.addEventListener('click', () => {
 		const promise = fetch(`${baseHost}/config`)
-			.then((response) => response.json())
-			.then((state) => {
+			.then(response => response.json())
+			.then(state => {
 				const template = phCalibrationDialog.querySelector('template');
 				const tbody = template.parentElement;
 				tbody.replaceChildren(template);
@@ -632,8 +633,8 @@ phCalibrationDialog.update = (status) => {
 
 // Load settings
 fetch(`${baseHost}/config`)
-	.then((response) => response.json())
-	.then((state) => {
+	.then(response => response.json())
+	.then(state => {
 		for (let key in state) {
 			const value = state[key];
 			switch (key) {
@@ -679,7 +680,7 @@ fetch(`${baseHost}/config`)
 			manualDoseButton.addEventListener('click', async () => {
 				manualDoseButton.disabled = true;
 				await saveMineralsPumpsSettings();
-				await handleFetchResult(fetch(`${baseHost}/mineralsPumps?key=${key}&action=dose`));
+				await handleFetchResult(fetch(`${baseHost}/mineralsPumps?key=${key}&action=dose`), 'Dawka została zakolejkowana!');
 				manualDoseButton.disabled = false;
 			});
 
@@ -728,10 +729,11 @@ colorsCycleManager.download();
 // Update chart periodically
 let chartsUpdateInterval = 0;
 function restartChartsUpdate(seconds = 10) {
+	if (seconds < 3) seconds = 3;
 	clearTimeout(chartsUpdateInterval);
 	chartsUpdateInterval = setInterval(() => {
 		updateChart();
-	}, seconds * 1000);
+	}, 333 + seconds * 1000);
 }
 
 
