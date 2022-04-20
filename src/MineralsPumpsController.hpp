@@ -10,31 +10,10 @@ namespace MineralsPumps {
 		Count,
 	};
 
-	/// Settings for mineral pump (EEPROM structure).
-	struct PumpSettings {
-		/// Calibration value is defined by time (in miliseconds) required to pump one milliliter.
-		float calibration;
-
-		uint8_t hour;
-		uint8_t minute;
-
-		uint8_t milliliters;
-		uint8_t _pad;
-
-		/// Allocates C-style string representing entry data.
-		/// Format: `255mL @ 00:00 c: 123.456`.
-		std::unique_ptr<char[]> toCString(int pad = 0) const {
-			char* buf = new char[32]; 
-			snprintf(buf, 32, "%*umL @ %02u:%02u c: %f", pad, milliliters, hour, minute, calibration);
-			return std::unique_ptr<char[]>(buf);
-		}
-	};
-	static_assert(sizeof(PumpSettings) == 8, "Structures saved on EEPROM must have guaranted size!");
-
 	struct Pump {
-		PumpSettings settings;
 		unsigned long duration = 0;
 		unsigned long lastStartTime = 0;
+		PumpSettings* settings;
 		uint8_t pin;
 		union {
 			struct {
@@ -46,23 +25,23 @@ namespace MineralsPumps {
 		};
 
 		inline uint8_t getMilliliters() const {
-			return settings.milliliters;
+			return settings->milliliters;
 		}
 		void setMilliliters(uint8_t mL) {
-			settings.milliliters = mL;
-			duration = static_cast<unsigned long>(settings.calibration * mL + 0.5f);
+			settings->milliliters = mL;
+			duration = static_cast<unsigned long>(settings->calibration * mL + 0.5f);
 		}
 
 		inline float getCalibration() const {
-			return settings.calibration;
+			return settings->calibration;
 		}
 		void setCalibration(float value) {
-			settings.calibration = value;
-			duration = static_cast<unsigned long>(value * settings.milliliters + 0.5f);
+			settings->calibration = value;
+			duration = static_cast<unsigned long>(value * settings->milliliters + 0.5f);
 		}
 
 		float getMillilitersForDuration(unsigned long duration) {
-			return (float) duration / settings.calibration;
+			return (float) duration / settings->calibration;
 		}
 
 		inline unsigned long getStopTime() {
@@ -70,6 +49,7 @@ namespace MineralsPumps {
 		}
 
 		Pump(uint8_t pin) : pin(pin) {}
+		Pump(uint8_t pin, PumpSettings* settings) : settings(settings), pin(pin) {}
 
 		void set(bool active) {
 			this->active = active;
@@ -82,15 +62,23 @@ namespace MineralsPumps {
 		bool shouldStart(DateTime now) {
 			return (
 				!active &&
-				settings.milliliters > 0 &&
-				now.hour()   == settings.hour && 
-				now.minute() == settings.minute &&
+				settings->milliliters > 0 &&
+				now.hour()   == settings->hour && 
+				now.minute() == settings->minute &&
 				millis() - lastStartTime > 60000
 			);
 		}
 
 		bool shouldStop() {
 			return active && millis() - lastStartTime >= duration && !manual;
+		}
+
+		/// Allocates C-style string representing entry data.
+		/// Format: `255mL @ 00:00 c: 123.456`.
+		std::unique_ptr<char[]> settingsToCString(int pad = 0) const {
+			char* buf = new char[32]; 
+			snprintf(buf, 32, "%*umL @ %02u:%02u c: %f", pad, settings->milliliters, settings->hour, settings->minute, settings->calibration);
+			return std::unique_ptr<char[]>(buf);
 		}
 	};
 
@@ -103,23 +91,10 @@ namespace MineralsPumps {
 
 	const char* pumpsKeys[Mineral::Count] = { "ca", "mg", "kh" };
 
-	constexpr unsigned int EEPROMOffset = 0x200;
-
-	void saveSettings() {
-		for (uint8_t i = 0; i < Mineral::Count; i++) {
-			EEPROM.put(EEPROMOffset + i * sizeof(PumpSettings), pumps[i].settings);
-		}
-	}
-	void readSettings() {
-		for (uint8_t i = 0; i < Mineral::Count; i++) {
-			EEPROM.get(EEPROMOffset + i * sizeof(PumpSettings), pumps[i].settings);
-			pumps[i].setMilliliters(pumps[i].settings.milliliters);
-		}
-	}
 	void printSettings() {
 		LOG_INFO(MineralsPumps, "Settings:");
 		for (uint8_t i = 0; i < Mineral::Count; i++) {
-			LOG_INFO(MineralsPumps, "%s: %s", pumpsKeys[i], pumps[i].settings.toCString(3).get());
+			LOG_INFO(MineralsPumps, "%s: %s", pumpsKeys[i], pumps[i].settingsToCString(3).get());
 		}
 	}
 
@@ -169,7 +144,9 @@ namespace MineralsPumps {
 	}
 
 	void setup() {
-		readSettings();
+		pumps[0].settings = &settings->pumps[0];
+		pumps[1].settings = &settings->pumps[1];
+		pumps[2].settings = &settings->pumps[2];
 		printSettings();
 	}
 
@@ -182,11 +159,12 @@ namespace MineralsPumps {
 			const bool set    = active || action.equals("off");
 			const bool manual = on && !dose;
 			if (set) {
-				Mineral which = Mineral::Count;
-				/**/ if (key.equals("ca")) which = Mineral::Ca;
-				else if (key.equals("mg")) which = Mineral::Mg;
-				else if (key.equals("kh")) which = Mineral::KH;
-				if (which != Mineral::Count) {
+				Mineral requested = Mineral::Count;
+				/**/ if (key.equals("ca")) requested = Mineral::Ca;
+				else if (key.equals("mg")) requested = Mineral::Mg;
+				else if (key.equals("kh")) requested = Mineral::KH;
+				if (requested != Mineral::Count) {
+					which = requested;
 					pumps[which].manual = manual;
 					pumps[which].set(active);
 				}

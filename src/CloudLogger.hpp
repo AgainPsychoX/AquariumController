@@ -5,24 +5,21 @@
 #include <ESP8266HTTPClient.h>
 
 namespace CloudLogger {
-	constexpr unsigned int EEPROMOffset = 0x008;
 	constexpr bool discardResponse = true;
 
 	WiFiClientSecure sslClient;
 	BearSSL::Session session;
 	HTTPClient httpClient;
 
-	unsigned long int interval = 0;
-	unsigned long int parseIntervalFromSetting(uint8_t setting) {
-		return static_cast<unsigned long int>((setting & 0b10000000) ? 60 : 1) * (setting & 0b01111111) * 1000;
+	inline unsigned long int getInterval() {
+		return settings->cloud.interval;
 	}
-	uint8_t parseIntervalToSetting(unsigned long int interval) {
-		unsigned short int seconds = interval / 1000;
-		return seconds <= 127 ? seconds : (0b10000000 & (seconds / 60));
+	inline void setInterval(unsigned long int ms) {
+		settings->cloud.interval = ms;
 	}
 
 	inline bool isEnabled() {
-		return interval != 0;
+		return getInterval() != 0;
 	}
 
 #if CLOUDLOGGER_SECURE
@@ -81,7 +78,7 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 
 			// Prepare request body
 			DateTime now = rtc.now();
-			constexpr unsigned int bufferLength = 160;
+			constexpr unsigned int bufferLength = 200;
 			char buffer[bufferLength];
 			int writtenLength = snprintf(
 				buffer, bufferLength,
@@ -89,11 +86,13 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 					"\"rtcTemperature\":%.2f,"
 					"\"waterTemperature\":%.2f,"
 					"\"phLevel\":%.6f,"
+					"\"secret\":\"%s\","
 					"\"timestamp\":\"%04d-%02d-%02dT%02d:%02d:%02d\""
 				"}",
 				entry.rtcTemperature,
 				entry.waterTemperature,
 				entry.phLevel,
+				settings->cloud.secret,
 				// Format should be like: "2004-02-12T15:19:21" (without time zones)
 				now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()
 			);
@@ -107,7 +106,7 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 			// Send POST request
 			httpClient.addHeader(F("Content-Type"), WEB_CONTENT_TYPE_APPLICATION_JSON);
 			int statusCode = httpClient.POST(reinterpret_cast<uint8_t*>(buffer), writtenLength);
-			if (!statusCode || statusCode >= 400) {
+			if (statusCode <= 0 || 400 <= statusCode) {
 				LOG_ERROR(CloudLogger, "Invalid status code: %i", statusCode);
 				break;
 			}
@@ -135,23 +134,11 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 		httpClient.end();
 	}
 
-	void readSettings() {
-		uint8_t intervalSetting = 0;
-		EEPROM.get(EEPROMOffset, intervalSetting);
-		interval = parseIntervalFromSetting(intervalSetting);
-
-		if (interval != 0 && interval < 10000) {
-			LOG_WARN(CloudLogger, "Interval too short, using 10 seconds.");
-			interval = 10000;
-		}
-	}
-	void saveSettings() {
-		uint8_t intervalSetting = parseIntervalToSetting(interval);
-		EEPROM.put(EEPROMOffset, intervalSetting);
-	}
-
 	void setup() {
-		readSettings();
+		if (getInterval() != 0 && getInterval() < 10000) {
+			LOG_WARN(CloudLogger, "Interval too short, using 10 seconds.");
+			setInterval(10000);
+		}
 
 		// Prepare SSL client
 		sslClient.setSession(&session);

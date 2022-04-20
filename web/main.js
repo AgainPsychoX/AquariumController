@@ -20,6 +20,23 @@ function debounce(func, timeout) {
 	}
 }
 
+function parseBoolean(value, defaultValue) {
+	if (typeof value === 'undefined') {
+		return defaultValue;
+	}
+	if (typeof value === 'boolean') {
+		return value;
+	}
+	if (typeof value === 'number') {
+		return value != 0;
+	}
+	switch (value.toLowerCase().trim()) {
+		case "true": case "yes": case "1": return true;
+		case "false": case "no": case "0": return false;
+		default: return defaultValue;
+	}
+}
+
 function colorForRSSI(value) {
 	/**/ if (value > -65) return '#00A000';
 	else if (value > -70) return '#76BA00';
@@ -388,8 +405,14 @@ const booleanStatusBits = [
 						}
 						case 'rssi': {
 							rssiOutput.classList.remove('error');
-							rssiOutput.style.color = colorForRSSI(value);
-							rssiOutput.innerText = value + 'dB';
+							if (value <= 9) {
+								rssiOutput.style.color = colorForRSSI(value);
+								rssiOutput.innerText = value + 'dB';
+							}
+							else {
+								rssiOutput.style.color = 'black';
+								rssiOutput.innerText = '?';
+							}
 							break;
 						}
 						case 'red':
@@ -628,6 +651,58 @@ phCalibrationDialog.update = (status) => {
 	});
 	phCalibrationDialog.querySelector('button[name=cancel]').addEventListener('click', async (e) => {
 		phCalibrationDialog.classList.add('closing');
+	});
+}
+
+// Network settings
+const networkSettingsDialog = document.querySelector('dialog#network-settings');
+{
+	const fields = ['ssid', 'psk', 'ip', 'mask', 'gateway', 'dns1', 'dns2'];
+
+	const openButton = document.querySelector('button[name=open-network-settings]');
+	openButton.addEventListener('click', () => {
+		const promise = fetch(`${baseHost}/config`)
+			.then(response => response.json())
+			.then(state => {
+				for (const name of fields) {
+					networkSettingsDialog.querySelector(`input[name=${name}]`).value = state.network[name];
+				}
+				switch (state.network.mode) {
+					case 0:
+				}
+				networkSettingsDialog.querySelector(`input[name=mode][value=${state.network.mode & 1 ? 'sta' : 'ap'}]`).checked = true;
+				networkSettingsDialog.querySelector(`input[name=fallback-ap]`).checked = parseBoolean(state.network.mode > 1);
+				networkSettingsDialog.querySelector(`input[name=auto-ip]`).checked = parseBoolean(state.network.static);
+				networkSettingsDialog.showModal();
+			})
+		;
+		handleFetchResult(promise, '');
+	});
+
+	const form = networkSettingsDialog.querySelector('form');
+
+	networkSettingsDialog.querySelector('button[name=save]').addEventListener('click', async (e) => {
+		if (!form.checkValidity()) return;
+
+		if (!prompt("Jesteś pewien, że chcesz zapisać zamiany? Urządzenie zostanie zresetowane.")) return;
+
+		e.preventDefault();
+		networkSettingsDialog.classList.add('closing');
+
+		const mode = (networkSettingsDialog.querySelector(`input[name=fallback-ap]`).checked ? 2 : 0) | (document.querySelector(`input[name=mode]:checked`).value == 'ap' ? 0 : 1);
+		const querystring = (
+			fields
+				.map(name => `network.${name}=${encodeURIComponent(networkSettingsDialog.querySelector(`input[name=${name}]`).value)}`)
+				.join('&') +
+			`&network.static=${networkSettingsDialog.querySelector(`input[name=auto-ip]`).checked ? 0 : 1}` +
+			`&network.mode=${mode}`
+		);
+		await handleFetchResult(fetch(`${baseHost}/config?${querystring}`), 'Wysłano! Urządzenie zostanie zresetowane...');
+		window.close();
+	});
+	networkSettingsDialog.querySelector('button[name=cancel]').addEventListener('click', async (e) => {
+		e.preventDefault();
+		networkSettingsDialog.classList.add('closing');
 	});
 }
 

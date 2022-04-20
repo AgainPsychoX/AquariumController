@@ -5,8 +5,6 @@
 namespace Circulator {
 	constexpr byte ioExpanderPin = 3;
 
-	uint16_t activeSeconds;
-	uint16_t pauseSeconds;
 	bool active = false;
 
 	void set(bool active) {
@@ -14,30 +12,24 @@ namespace Circulator {
 		ioExpander.digitalWrite(ioExpanderPin, !active);
 	}
 
-	constexpr unsigned int EEPROMOffset = 0x00C;
-
-	void saveSettings() {
-		EEPROM.put(EEPROMOffset + 0 * sizeof(uint16_t), activeSeconds);
-		EEPROM.put(EEPROMOffset + 1 * sizeof(uint16_t), pauseSeconds);
-	}
-	void readSettings() {
-		EEPROM.get(EEPROMOffset + 0 * sizeof(uint16_t), activeSeconds);
-		EEPROM.get(EEPROMOffset + 1 * sizeof(uint16_t), pauseSeconds);
-	}
 	void printSettings() {
-		LOG_INFO(Circulator, "Settings: %u seconds active, %u seconds pause.", activeSeconds, pauseSeconds);
+		LOG_INFO(Circulator, 
+			"Settings: %lu ms active, %lu ms pause.", 
+			settings->circulator.activeTime, settings->circulator.pauseTime
+		);
 	}
 
 	void update(unsigned long& currentMillis) {
+		const unsigned long delay = active ? settings->circulator.activeTime : settings->circulator.pauseTime;
 		static unsigned long lastUpdateMillis = 0;
-		if ((currentMillis - lastUpdateMillis) / 1000 > (active ? activeSeconds : pauseSeconds)) {
+		if (currentMillis - lastUpdateMillis > delay) { // 1024 (division by power of 2 is much faster)
 			currentMillis = lastUpdateMillis = millis();
 
-			if (activeSeconds == 0) {
+			if (settings->circulator.activeTime == 0) {
 				set(false);
 				return;
 			}
-			if (pauseSeconds == 0) {
+			if (settings->circulator.pauseTime == 0) {
 				set(true);
 				return;
 			}
@@ -47,7 +39,6 @@ namespace Circulator {
 	}
 
 	void setup() {
-		readSettings();
 		printSettings();
 	}
 };

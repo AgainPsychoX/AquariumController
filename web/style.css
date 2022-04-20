@@ -66,6 +66,11 @@ label input[type=checkbox] {
 	vertical-align: middle;
 }
 
+input:invalid {
+	border: 2px solid red;
+	border-radius: 2px;
+}
+
 input[type=number],
 input[type=time] {
 	font-family: 'Segoe UI', monospace;
@@ -444,6 +449,26 @@ dialog#ph-calibration table {
 	margin: 0 auto;
 	margin-bottom: 8px;
 	text-align: center;
+}
+
+dialog#network-settings label {
+	flex-wrap: nowrap;
+	justify-content: start;
+}
+dialog#network-settings figure {
+	padding-left: 24px;
+}
+dialog#network-settings .grid label {
+	display: grid;
+	grid-template-columns: 64px auto;
+	align-items: center;
+}
+dialog#network-settings label.mask {
+	grid-template-columns: auto auto;
+	padding-left: 16px;
+}
+dialog#network-settings label.mask input {
+	width: 40px;
 }
 
 

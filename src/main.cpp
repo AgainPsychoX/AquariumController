@@ -9,6 +9,7 @@
 #include <DS3231.h>
 #include <DallasTemperature.h> // for DS18B20 thermometer
 #include <PCF8574.hpp>
+#include "Network.hpp"
 #include "LightingController.hpp"
 #include "WaterLevelController.hpp"
 #include "HeatingController.hpp"
@@ -17,6 +18,8 @@
 #include "MineralsPumpsController.hpp"
 #include "phMeter.hpp"
 #include "webEncoded/WebStaticContent.hpp"
+
+Settings* settings;
 
 PCF8574 ioExpander {0x26};
 
@@ -32,13 +35,26 @@ struct {
 DallasTemperature oneWireThermometers(&oneWire);
 
 LiquidCrystal_I2C lcd(PCF8574_ADDR_A21_A11_A01);
+const uint8_t PROGMEM lcd_customChar_WiFi_best[] { 0x00, 0x1E, 0x01, 0x1C, 0x02, 0x19, 0x05, 0x15 };
+const uint8_t PROGMEM lcd_customChar_WiFi_good[] { 0x00, 0x00, 0x1C, 0x02, 0x19, 0x05, 0x15, 0x00 };
+const uint8_t PROGMEM lcd_customChar_WiFi_okay[] { 0x00, 0x00, 0x00, 0x00, 0x18, 0x04, 0x14, 0x00 };
+const uint8_t PROGMEM lcd_customChar_dot_x0y7[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00 };
+const uint8_t PROGMEM lcd_customChar_vline_x0y4[] { 0x00, 0x00, 0x00, 0x00, 0x10, 0x10, 0x10, 0x10 };
 
 ESP8266WebServer webServer(80);
 
 float waterTemperature = 0; // avg of last and current read (simplest noise reduction)
 
 bool showIP = true;
-constexpr unsigned int showIPtimeout = 15000;
+constexpr unsigned int showIPtimeout = 20000;
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Parse boolean string.
+bool parseBoolean(const char* str) {
+	//return str[0] == '1' || str[0] == 't' || str[0] == 'T' || str[0] == 'y' || str[0] == 'Y';
+	return !(str[0] == '0' || str[0] == 'f' || str[0] == 'F' || str[0] == 'n' || str[0] == 'N');
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -52,6 +68,7 @@ void setup() {
 
 	// Initialize Serial console
 	Serial.begin(115200);
+	Serial.println();
 
 	// Initialize RTC
 	{
@@ -81,52 +98,43 @@ void setup() {
 	// Initialize display
 	lcd.begin(20, 2);
 	lcd.clear();
+	lcd.createChar(1, lcd_customChar_dot_x0y7);
+	lcd.createChar(2, lcd_customChar_WiFi_okay);
+	lcd.createChar(3, lcd_customChar_WiFi_good);
+	lcd.createChar(4, lcd_customChar_WiFi_best);
+	lcd.createChar(5, lcd_customChar_vline_x0y4);
 
-	// Connect to WiFi
+	// Initialize EEPROM
 	{
-		Serial.print(F("Connecting to WiFi"));
+		EEPROM.begin(sizeof(Settings));
+		delay(100);
+		settings = reinterpret_cast<Settings*>(EEPROM.getDataPtr());
 
-		// Connecting info on LCD
-		lcd.setCursor(0, 0);
-		if (strlen(ssid) < 14) {
-			lcd.print(F("SSID: "));
+		if (settings->calculateChecksum() != settings->checksum) {
+			LOG_INFO(EEPROM, "Checksum miss-match, reseting settings to default.");
+			settings->resetToDefault();
+			Network::resetConfig();
+			Lighting::resetToDefaultSettings();
+
+			EEPROM.commit();
+			lcd.setCursor(0, 0);
+			lcd.print(F("Reseting EEPROM..."));
+			delay(3000);
+			ESP.restart();
 		}
-		lcd.print(ssid);
-
-		WiFi.begin(ssid, password);
-		while (WiFi.status() != WL_CONNECTED) {
-			// buildInLed.on();
-			lcd.setCursor(0, 1);
-			lcd.print(F("IP: - * - * - * - "));
-			delay(333);
-
-			// buildInLed.off();
-			lcd.setCursor(0, 1);
-			lcd.print(F("IP: * - * - * - * "));
-			delay(333);
-
-			Serial.print(F("."));
-		}
-
-		Serial.println(F(" connected!"));
-		Serial.print(F("IP address: "));
-		Serial.println(WiFi.localIP());
-		lcd.clear();
 	}
+
+	// Setup network service (might take a while, incl. LCD animation)
+	Network::setup();
+	lcd.clear();
 
 	// Initialize water termometer
 	oneWireThermometers.begin();
 	oneWireThermometers.requestTemperatures();
 	float t = oneWireThermometers.getTempCByIndex(0);
-	if (t != DEVICE_DISCONNECTED_C){
+	if (t != DEVICE_DISCONNECTED_C) {
 		waterTemperature = t;
 	}
-
-	// Initialize EEPROM
-	// See http://arduino.esp8266.com/Arduino/versions/2.0.0/doc/libraries.html#eeprom
-	EEPROM.begin(0x1000);
-	delay(100);
-	// TODO: seeding/factory settings
 
 	// Setup subcontrollers and services
 	Lighting::setup();
@@ -193,30 +201,20 @@ void setup() {
 			ds3231.setSecond(atoi(cstr + 17));
 		}
 
+		// Handle lighting immediate config (not preserved, exposed for testing)
 		if (const String& str = webServer.arg("red");      !str.isEmpty())   redPWM.set(atoi(str.c_str()));
 		if (const String& str = webServer.arg("green");    !str.isEmpty()) greenPWM.set(atoi(str.c_str()));
 		if (const String& str = webServer.arg("blue");     !str.isEmpty())  bluePWM.set(atoi(str.c_str()));
 		if (const String& str = webServer.arg("white");    !str.isEmpty()) whitePWM.set(atoi(str.c_str()));
-		if (const String& str = webServer.arg("forceColors"); !str.isEmpty()) Lighting::disable = webServer.arg("forceColors").equals("true");
+		if (const String& str = webServer.arg("forceColors"); !str.isEmpty()) Lighting::disable = parseBoolean(str.c_str());
 
 		// Handle heating config options
-		{
-			bool changes = false;
-			if (const String& str = webServer.arg("heatingMinTemperature"); !str.isEmpty()) { Heating::minTemperature = atof(str.c_str()); changes = true; }
-			if (const String& str = webServer.arg("heatingMaxTemperature"); !str.isEmpty()) { Heating::maxTemperature = atof(str.c_str()); changes = true; }
-			if (changes) Heating::saveSettings();
-		}
+		if (const String& str = webServer.arg("heatingMinTemperature"); !str.isEmpty()) settings->temperatures.minimal = atof(str.c_str());
+		if (const String& str = webServer.arg("heatingMaxTemperature"); !str.isEmpty()) settings->temperatures.maximal = atof(str.c_str());
 
 		// Handle circulator config options
-		{
-			bool changes = false;
-			if (const String& str = webServer.arg("circulatorActiveTime"); !str.isEmpty()) { Circulator::activeSeconds = atoi(str.c_str()); changes = true; }
-			if (const String& str = webServer.arg("circulatorPauseTime");  !str.isEmpty()) { Circulator::pauseSeconds  = atoi(str.c_str()); changes = true; }
-			if (changes) {
-				Circulator::saveSettings();
-				Circulator::printSettings();
-			}
-		}
+		if (const String& str = webServer.arg("circulatorActiveTime"); !str.isEmpty()) settings->circulator.activeTime = atoi(str.c_str()) * 1000;
+		if (const String& str = webServer.arg("circulatorPauseTime");  !str.isEmpty()) settings->circulator.pauseTime  = atoi(str.c_str()) * 1000;
 
 		// Handle minerals pumps config
 		{
@@ -233,8 +231,8 @@ void setup() {
 				arg[keyOffset + 1] = pumpsKeys[i][1];
 				if (const String& str = webServer.arg(arg); !str.isEmpty()) {
 					const unsigned short time = atoi(str.c_str());
-					pumps[i].settings.hour   = time / 60;
-					pumps[i].settings.minute = time % 60;
+					pumps[i].settings->hour   = time / 60;
+					pumps[i].settings->minute = time % 60;
 					changes = true;
 				}
 			}
@@ -264,8 +262,7 @@ void setup() {
 			}
 
 			if (changes) {
-				MineralsPumps::saveSettings();
-				MineralsPumps::printSettings();
+				MineralsPumps::setup();
 			}
 		}
 
@@ -281,7 +278,7 @@ void setup() {
 			for (uint8_t i = 0; i < 3; i++) {
 				arg[indexOffset] = '0' + i;
 				if (const String& value = webServer.arg(arg); !value.isEmpty()) {
-					phMeter::settings.points[i].adc = atoi(value.c_str());
+					settings->phMeter.adc[i] = atoi(value.c_str());
 					changes = true;
 				}
 			}
@@ -291,27 +288,28 @@ void setup() {
 			for (uint8_t i = 0; i < 3; i++) {
 				arg[indexOffset] = '0' + i;
 				if (const String& value = webServer.arg(arg); !value.isEmpty()) {
-					phMeter::settings.points[i].pH = atof(value.c_str());
+					settings->phMeter.pH[i] = atof(value.c_str());
 					changes = true;
 				}
 			}
 
 			if (changes) {
-				phMeter::saveSettings();
-				phMeter::printSettings();
+				phMeter::setup();
 			}
 		}
 
 		if (const String& str = webServer.arg("cloudLoggingInterval"); !str.isEmpty()) {
-			CloudLogger::interval = atoi(str.c_str()) * 1000;
-			CloudLogger::saveSettings();
+			CloudLogger::setInterval(atoi(str.c_str()) * 1000);
 		}
+
+		// Handle network config
+		Network::handleConfigArgs();
 
 		// Response with current config
 		const auto& pump_ca = MineralsPumps::pumps[MineralsPumps::Mineral::Ca];
 		const auto& pump_mg = MineralsPumps::pumps[MineralsPumps::Mineral::Mg];
 		const auto& pump_kh = MineralsPumps::pumps[MineralsPumps::Mineral::KH];
-		constexpr unsigned int bufferLength = 400;
+		constexpr unsigned int bufferLength = 640;
 		char buffer[bufferLength];
 		int ret = snprintf_P(
 			buffer, bufferLength,
@@ -334,20 +332,22 @@ void setup() {
 					"\"adcMax\":%u,"
 					"\"adcVoltage\":%.2f"
 				"},"
+				"\"network\":%s,"
 				"\"cloudLoggingInterval\":%u"
 			"}"),
-			Heating::minTemperature,
-			Heating::maxTemperature,
-			Circulator::activeSeconds,
-			Circulator::pauseSeconds,
-			(pump_ca.settings.hour * 60) + pump_ca.settings.minute, pump_ca.getMilliliters(),
-			(pump_mg.settings.hour * 60) + pump_mg.settings.minute, pump_mg.getMilliliters(),
-			(pump_kh.settings.hour * 60) + pump_kh.settings.minute, pump_kh.getMilliliters(),
-			phMeter::settings.points[0].adc, phMeter::settings.points[0].pH,
-			phMeter::settings.points[1].adc, phMeter::settings.points[1].pH,
-			phMeter::settings.points[2].adc, phMeter::settings.points[2].pH,
+			settings->temperatures.minimal,
+			settings->temperatures.maximal,
+			static_cast<unsigned int>(settings->circulator.activeTime / 1000),
+			static_cast<unsigned int>(settings->circulator.pauseTime / 1000),
+			(pump_ca.settings->hour * 60) + pump_ca.settings->minute, pump_ca.getMilliliters(),
+			(pump_mg.settings->hour * 60) + pump_mg.settings->minute, pump_mg.getMilliliters(),
+			(pump_kh.settings->hour * 60) + pump_kh.settings->minute, pump_kh.getMilliliters(),
+			settings->phMeter.adc[0], settings->phMeter.pH[0],
+			settings->phMeter.adc[1], settings->phMeter.pH[1],
+			settings->phMeter.adc[2], settings->phMeter.pH[2],
 			phMeter::analogMax, phMeter::analogMaxVoltage,
-			static_cast<unsigned int>(CloudLogger::interval / 1000)
+			Network::getConfigJSON().get(),
+			static_cast<unsigned int>(CloudLogger::getInterval() / 1000)
 		);
 		if (ret < 0 || static_cast<unsigned int>(ret) >= bufferLength) {
 			webServer.send(500, WEB_CONTENT_TYPE_TEXT_HTML, F("Response buffer exceeded"));
@@ -372,7 +372,9 @@ void setup() {
 	// });
 
 	webServer.on(F("/saveEEPROM"), []() {
-		EEPROM.commit();
+		if (settings->prepareForSave()) {
+			EEPROM.commit();
+		}
 		webServer.send(200);
 	});
 
@@ -416,7 +418,7 @@ void loop() {
 	webServer.handleClient();
 
 	if (CloudLogger::isEnabled() && !MineralsPumps::pumping) {
-		UPDATE_EVERY(CloudLogger::interval) {
+		UPDATE_EVERY(CloudLogger::getInterval()) {
 			CloudLogger::push({
 				.waterTemperature = waterTemperature,
 				.rtcTemperature = ds3231.getTemperature(),
@@ -456,6 +458,54 @@ void loop() {
 			lcd.print(now.second());
 		}
 
+		// Show WiFi status
+		{
+			lcd.print(' ');
+			static bool blink;
+			blink = !blink;
+			switch (WiFi.getMode()) {
+				case WIFI_STA: {
+					if (WiFi.status() == WL_CONNECTED) {
+						int8_t rssi = WiFi.RSSI();
+						if (rssi > -65) {
+							lcd.write(4);
+							lcd.write(5);
+							break;
+						}
+						else if (rssi > -70) {
+							if (blink) {
+								lcd.write(4);
+								lcd.write(5);
+							}
+							else {
+								lcd.write(3);
+								lcd.write(' ');
+							}
+							break;
+						}
+						else if (rssi > -75) lcd.write(3);
+						else if (rssi > -80) lcd.write(blink ? 3 : 2);
+						else if (rssi > -85) lcd.write(2);
+						else if (rssi > -95) lcd.write(blink ? 2 : 1);
+						else /*           */ lcd.write(1);
+						lcd.write(' ');
+					}
+					else {
+						lcd.write(blink ? 3 : 'x');
+						lcd.write(' ');
+					}
+					break;
+				}
+				case WIFI_AP: {
+					lcd.write('A');
+					lcd.write('P');
+					break;
+				}
+				default:
+					break;
+			}
+		}
+
 		// Update themometer read
 		{
 			oneWireThermometers.requestTemperatures();
@@ -485,7 +535,11 @@ void loop() {
 			// Show only IP in second row
 			lcd.setCursor(0, 1);
 			lcd.print(F("IP: "));
-			lcd.print(WiFi.localIP().toString().c_str());
+			char buf[16];
+			ip_info info;
+			Network::getIPInfo(info);
+			sprintf(buf, "%u.%u.%u.%u", ip4_addr_printf_unpack(&info.ip));
+			lcd.print(buf);
 			if (millis() > showIPtimeout) {
 				showIP = false;
 			}

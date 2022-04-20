@@ -1,7 +1,35 @@
 #pragma once
 
 #include <cstdint>
+#include <new>
 #include <Arduino.h>
+#include <ESP8266WiFi.h> // ip4_addr_t
+#include <coredecls.h> // crc32
+
+
+
+// Utils to help printf as binary
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(byte)   \
+	(byte & 0x80 ? '1' : '0'), \
+	(byte & 0x40 ? '1' : '0'), \
+	(byte & 0x20 ? '1' : '0'), \
+	(byte & 0x10 ? '1' : '0'), \
+	(byte & 0x08 ? '1' : '0'), \
+	(byte & 0x04 ? '1' : '0'), \
+	(byte & 0x02 ? '1' : '0'), \
+	(byte & 0x01 ? '1' : '0') 
+
+
+
+// Taken from great article at https://stackoverflow.com/a/109025/4880243
+constexpr uint8_t numberOfSetBits(uint32_t i)
+{
+	i = i - ((i >> 1) & 0x55555555);
+	i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+	i = (i + (i >> 4)) & 0x0F0F0F0F;
+	return (i * 0x01010101) >> 24;
+}
 
 
 
@@ -16,13 +44,13 @@
 #define STRINGIFY(x) STRINGIFY_DETAIL(x)
 
 // FNV1a 32 (source: https://gist.github.com/Lee-R/3839813, license: Public Domain)
-constexpr uint32_t fnv1a_32(const char* const s, size_t count) {
-	return count ? (fnv1a_32(s, count - 1) ^ s[count - 1]) * 16777619u : 2166136261u;
+constexpr uint32_t fnv1a_32_recursive(const char* const s, size_t count) {
+	return count ? (fnv1a_32_recursive(s, count - 1) ^ s[count - 1]) * 16777619u : 2166136261u;
 }
 
 template <size_t N>
 constexpr uint32_t hashLogCompStr(const char (&str) [N]) {
-	return fnv1a_32(str, N - 1);
+	return fnv1a_32_recursive(str, N - 1);
 }
 
 #define USE_LOG_LEVEL_DEFAULT(level)    template <uint64_t str_hash> struct LogLevelForComponent { static constexpr int value = level; };
@@ -74,20 +102,6 @@ constexpr uint32_t hashLogCompStr(const char (&str) [N]) {
 
 
 
-// Utils to help printf as binary
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte)   \
-	(byte & 0x80 ? '1' : '0'), \
-	(byte & 0x40 ? '1' : '0'), \
-	(byte & 0x20 ? '1' : '0'), \
-	(byte & 0x10 ? '1' : '0'), \
-	(byte & 0x08 ? '1' : '0'), \
-	(byte & 0x04 ? '1' : '0'), \
-	(byte & 0x02 ? '1' : '0'), \
-	(byte & 0x01 ? '1' : '0') 
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // Some global externs for misc stuff
 
@@ -102,4 +116,9 @@ extern PCF8574 ioExpander;
 extern RTClib rtc;
 extern ESP8266WebServer webServer;
 
+// Get settings object (which is persisted in EEPROM)
+extern Settings* settings;
+
+// Utils functions from main
+extern bool parseBoolean(const char* str);
 

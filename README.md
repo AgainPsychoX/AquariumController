@@ -104,8 +104,15 @@ Hardware consists of:
 
 	```
 	.--------------------.
-	|HH:mm:ss      TT.T^C| <-- Time and water temperature.
+	|HH:mm:ss @@   TT.T^C| <-- Time, WiFi status and water temperature or water pH level.
 	|Message here...    G| <-- Custom message (like pumping in progress) and 'G' set or hidden whenever heating is on.
+	'--------------------'
+	```
+
+	```
+	.--------------------.
+	|HH:mm:ss AP   pH 7.1|
+	|Message here...    G|
 	'--------------------'
 	```
 
@@ -122,6 +129,7 @@ Hardware consists of:
 ### Modules
 
 * Web server,
+* Network code (connect to configured network, incl. IP configuration; or host AP)
 * Lights controller,
 * Heating controller,
 * Circulator controller,
@@ -195,17 +203,17 @@ heatingMinTemperature=22.25
 heatingMaxTemperature=23.75
 
 circulatorActiveTime=10
-circulatorPauseTime=10
+circulatorPauseTime=5
 
 mineralsPumps.ca.time=570
 mineralsPumps.ca.mL=10
-mineralsPumps.ca.c=4200.013
+mineralsPumps.ca.c=412.000
 mineralsPumps.mg.time=570
 mineralsPumps.mg.mL=10
-mineralsPumps.mg.c=4200.013
+mineralsPumps.mg.c=420.310
 mineralsPumps.kh.time=570
 mineralsPumps.kh.mL=10
-mineralsPumps.kh.c=4200.013
+mineralsPumps.kh.c=397.016
 
 phMeter.points.0.adc=712
 phMeter.points.0.pH=9.20
@@ -213,6 +221,16 @@ phMeter.points.1.adc=851
 phMeter.points.1.pH=6.88
 phMeter.points.2.adc=1008
 phMeter.points.2.pH=4.03
+
+network.mode=2
+ssid=Hotspot
+psk=12345678
+static=1
+ip=192.168.1.123
+mask=24
+gateway=192.168.1.1
+dns1=1.1.1.1
+dns2=1.0.0.1
 
 cloudLoggingInterval=10
 ```
@@ -225,8 +243,6 @@ Returns:
 	
 	"circulatorActiveTime": 10,
 	"circulatorPauseTime":  10,
-
-	"cloudLoggingInterval": 10,
 
 	"mineralsPumps": {
 		"ca": { "time": 570, "mL": 10 },
@@ -241,8 +257,22 @@ Returns:
 			{ "adc": 800, "pH": 7.11 }
 		],
 		"adcMax": 1024,
-		"adcVoltage": 3.2,
-	}
+		"adcVoltage": 3.2
+	},
+
+	"network": {
+		"mode": 2,
+		"ssid": "Hotspot",
+		"psk": "12345678",
+		"static": 1,
+		"ip": "192.168.55.249",
+		"mask": 24,
+		"gateway": "192.168.55.1",
+		"dns1": "192.168.55.1",
+		"dns2": "1.1.1.1"
+	},
+
+	"cloudLoggingInterval": 10,
 }
 ```
 
@@ -255,33 +285,35 @@ Returns:
 
 #### EEPROM structure
 
-Size: `0x1000` (4kB)
+Size: `0x1000` (4kB), used `0x200` (512b).
 
-* `0x000` - `0x010`:
+* `0x000` - `0x020` - Empty header & checksum.
 
-	* `0x000` - `0x007` bytes - nothing (8 bytes of nothing at position 0)
-	* `0x008` byte - cloud logging settings (interval in seconds or seconds (MSB set for minutes), up to 127 or 0 if disabled)
-	* `0x009` byte - unused for now
-	* `0x00A` byte - maximum temperature* for heating controller
-	* `0x00B` byte - minimal temperature* for heating controller 
-	* `0x00C` & `0x00D` bytes - circulator active period in seconds
-	* `0x00E` & `0x00F` bytes - circulator pause period in minutes 
+	* `0x01C` - `0x020` - CRC32 checksum.
 
-\* - temperatures encoded as `abs(floor(temperature * 100)) / 25`, decoded as `value * 25 / 100`.
+* `0x020` - `0x030` - Water temperature.
 
-* `0x010` - `0x080` - smooth light controller entries
+	* `0x020` - `0x024` (`float`) - Minimum temperature (lowers starts heating).
+	* `0x024` - `0x028` (`float`) - Optimal temperature (stops heating or fans).
+	* `0x028` - `0x02C` (`float`) - Maximal temperature (above starts fans).
 
-	Entry format: 
-	* 1st byte - hour
-	* 2nd byte - minute
-	* 3rd byte - red light PWM value
-	* 4th byte - green light PWM value
-	* 5th byte - blue light PWM value
-	* 6th byte - while light PWM value
+* `0x030` - `0x040` - Water circulation.
 
-	It means there are `14` customizable entries.
+	* 1 byte - Circulator active time start (hour number).
+	* 1 byte - Circulator active time start (minute number).
+	* 1 byte - Circulator active hours end.
+	* 1 byte - Circulator active hours end.
+	* 4 bytes - Circulator active period in milliseconds.
+	* 4 bytes - Circulator pause period in milliseconds. 
 
-* `0x200` - `0x218` - minerals pumps settings:
+* `0x040` - `0x060` - pH meter settings (calibration).
+
+	* `0x040`, `0x044`, `0x048`, `0x04C`, `0x050` (5x `float`) - Defined pH levels.
+	* `0x054`, `0x056`, `0x058`, `0x05A`, `0x05C` (5x `u16`) - ADC readings for defined levels.
+	* `0x05E` (`u8`) - Number of points.
+	* `0x05F` (`u8`) - Interpolation method selection enum.
+
+* `0x060` - `0x080` - Minerals pumps settings.
 
 	Format:
 	* 4 bytes - calibration float.
@@ -292,15 +324,39 @@ Size: `0x1000` (4kB)
 
 	Three pumps, total of 24 bytes.
 
-* `0x220` - `0x230` - pH meter settings (calibration).
+* `0x080` - `0x100` - Smooth light controller entries.
 
-	Format:
-	* 3 calibration points, each 8 bytes:
-		* 4 bytes - pH level (float).
-		* 2 bytes - ADC raw value read for given pH.
-		* 2 bytes padding.
-	* 1 byte for interpolation method selection enum.
-	* The rest is padding.
+	Entry format: 
+	* 1st byte - hour
+	* 2nd byte - minute
+	* 3rd byte - red light PWM value
+	* 4th byte - green light PWM value
+	* 5th byte - blue light PWM value
+	* 6th byte - while light PWM value
+	* 2 bytes padding (round up to 8 bytes).
+
+	It means there are `16` customizable entries.
+
+* `0x100` - `0x160` - Some network settings.
+
+	Some SSID, PSK and some mode specific settings are saved internally by SDK, therefore not included here. 
+	IPv4 fields: 192.168.4.1 == 0x0104A8C0.
+
+	* 1 byte - mode/flags (disabled/always ap/station/fallback ap; whenever to use static ip or not).
+	* 4 bytes - IPv4 for device.
+	* 4 bytes - Network mask.
+	* 4 bytes - Gateway IP.
+	* 4 bytes - IPv4 for DNS 1.
+	* 4 bytes - IPv4 for DNS 2, or 0 if none.
+	* 8 bytes of padding.
+	* 64 bytes - basic authorization token, encoded (base64 of `login:password`).
+
+* `0x160` - `0x200` - Cloud settings.
+
+	* 16 bytes - secret, to authorize and/or identify the controller (needs to end with \0).
+	* 4 bytes - interval for cloud logger (in milliseconds).
+	* 12 bytes padding.
+	* `0x180` - `0x200` - cloud endpoint URL.
 
 #### Cloud logger
 
@@ -312,49 +368,27 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
-+ Add circulator night mode, with settable hour:minute.
-+ Add feeding mode - circulator disable (and maybe special lighting?)
-+ Try soft-PWM on io expander (rapid switching?).
-+ Restructure EEPROM.
-
-	* 0x000-0x020 - empty
-	* 0x020-0x030 - temperatures, circulator
-	* 0x030-0x040 -	empty
-	* 0x040-0x060 - pH
-	* 0x060-0x080 - pumps
-	* 0x080-0x100 - lights (16 entries?)
-	* 0x100-0x200 - empty
-	* 0x200-0x280 - 
-		+ 32b ssid, 
-		+ 32b passwd, 
-		+ 4b ip
-		+ 1b mask & flags (5 bits mask length, always ap, ap on fail, hidden ap; if mask < 7 then automatic ip/gate/dns)
-		+ 3b gateway (first byte the same as ip)
-		+ 8b dns 1 & 2,
-		+ 48 auth base64('login:passwd')
-	* 0x280-0x300 - logger url (up to 128)
-	* 0x300-0x310 - 15 secret string + \0, is logger enabled = (last byte == 0)
-	* 0x800-0x1000 - cloud endpoint cert (0x560+)
-
-+ Store Wi-Fi settings (SSID/password) in EEPROM. 
-+ Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
 + Make `/config` endpoint use proper GET/POST to avoid lag of printing so much when only setting.
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
-+ RESTful API (see https://github.com/cesanta/mjson)
++ RESTful API (see https://arduinojson.org/ or https://github.com/cesanta/mjson)
 + Write rest of API docs.
++ Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
++ Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
++ Add circulator night mode, with settable hour:minute (already in EEPROM structure, but unused).
++ Add feeding mode - circulator disable (and maybe special lighting?)
++ Try soft-PWM on io expander (rapid switching? https://www.youtube.com/watch?v=Fsb7kxDxYGw http://sim.okawa-denshi.jp/en/PWMtool.php).
 + Add security token to cloud communication.
-+ Store cloud logger settings in EEPROM (incl. URL and secret).
++ Store cloud logger settings in EEPROM (incl. URL and secret) (already in EEPROM structure, but unused).
 + Include cloud endpoint code (Google App Scripts) here.
 + Circulator force run button.
 + Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
 + Add fancy animations on demand for LEDs.
-+ Proper seeding code (detect with `#include <coredecls.h> // crc32` or https://pl.wikipedia.org/wiki/Adler-32), incl. WiFi (http://arduino.esp8266.com/Arduino/versions/2.0.0/doc/libraries.html#wifi-esp8266wifi-library)
 + Show total running time (from last power-on), under current time at web portal.
 + Try overclock ESP into 160 MHz.
 + Use better web server library (https://github.com/me-no-dev/ESPAsyncWebServer).
 + Use HTTPS for web server.
 + Use some authorization for web panel config setting.
++ Reuse light cycle 2 bytes instead of hour/minute start/stop bytes for things like pumps or circulator.
 + Add polynomial/Newton interpolation for calculating ph level.
 + Temperature compensation for ph calculation.
 + Chart link/button for last hour/day should show error if no data to show.
@@ -366,7 +400,7 @@ There is HTTPS client running every configured interval sending the request with
 + Saving/reading colour cycle presets from browser storage.
 + Refactor DS3231 library (lighter one, use full DS3231 instead pieces).
 + Use `mimetable.cpp` for MIME types? No. Not until ESP8266 core impl fixes 3-4 times copying. Also, `getContentType` is copying even more XD.
-+ Standard Arduino/ESP core libraries are bad... 
++ Standard Arduino/ESP core libraries are bad... I want to do better, but shitty foundations make it futile or too hard.
 
 	- Stream using int instead char?
 	- Lack or invalid comments.

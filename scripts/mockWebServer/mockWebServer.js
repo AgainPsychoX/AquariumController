@@ -49,6 +49,17 @@ const config = {
 		adcMax: 1024,
 		adcVoltage: 3.2,
 	},
+	network: {
+		mode: 2,
+		ssid: 'Hello world!',
+		psk: '',
+		static: 1,
+		ip: '192.168.55.123',
+		mask: 24,
+		gateway: '192.168.55.1',
+		dns1: '1.1.1.1',
+		dns2: '1.0.0.1',
+	}
 };
 let red = 127;
 let green = 127;

@@ -202,6 +202,7 @@
 				<div class="flex-center spaced">
 					<button name="synchronize-time">Synchronizuj czas</button>
 					<button name="ph-calibrate">Kalibracja sensora pH</button>
+					<button name="open-network-settings">Ustawienia sieciowe</button>
 				</div>
 			</section>
 			<section id="save">
@@ -296,6 +297,73 @@
 			<button name="save">Zapisz</button>
 			<button name="cancel">Anuluj</button>
 		</div>
+	</dialog>
+	<dialog id="network-settings">
+		<form method="dialog">
+			<h3>Ustawienia sieciowe</h3>
+
+			<figure>
+				<label>
+					<input type="radio" name="mode" value="sta">
+					<span>Połącz do sieci</span>
+				</label>
+				<label>
+					<input type="radio" name="mode" value="ap">
+					<span>Utwórz Access Point</span>
+				</label>
+				<label>
+					<input type="checkbox" name="fallback-ap">
+					<span>Uruchom Access Point, jeśli nie można połączyć się do&nbsp;skonfigurowanej sieci.</span>
+				</label>
+			</figure>
+
+			<h4>Sieć</h4>
+			<figure class="grid">
+				<label>
+					<span>SSID:</span>
+					<input name="ssid" type="text" maxlength="30" />
+				</label>
+				<label>
+					<span>Hasło:</span>
+					<input name="psk" type="password" maxlength="30" pattern="^$|^.{8,}$" title="Hasło musi zawierać co najmniej 8 znaków." />
+				</label>
+			</figure>
+
+			<h4>Ustawienia IP</h4>
+			<figure>
+				<label>
+					<input type="checkbox" name="auto-ip">
+					<span>Ustawienia automatyczne (DHCP)</span>
+				</label>
+			</figure>
+			<figure id="static" class="grid">
+				<label>
+					<span>Adres:</span>
+					<input name="ip" type="text" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}([1-9]\d?|1\d\d|2[0-4]\d|25[0-5])$" title="Adres IP dla urządzenia. Przykład: 192.168.55.201" />
+				</label>
+				<label class="mask">
+					<span>Długość maski:</span>
+					<input name="mask" type="number" min="8" max="31" title="Długość maski sieci. Przykład: 24 dla 255.255.255.0" />
+				</label>
+				<label>
+					<span>Brama:</span>
+					<input name="gateway" type="text" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}([1-9]\d?|1\d\d|2[0-4]\d|25[0-5])$" title="Adres bramy sieci (routera). Przykład: 192.168.55.1" />
+				</label>
+				<label>
+					<span>DNS 1:</span>
+					<input name="dns1" type="text" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}([0-9]\d?|1\d\d|2[0-4]\d|25[0-5])$" title="Adres preferowanego serwera DNS. Przykład: 1.1.1.1" />
+				</label>
+				<label>
+					<span>DNS 2:</span>
+					<input name="dns2" type="text" minlength="7" maxlength="15" size="15" pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}([0-9]\d?|1\d\d|2[0-4]\d|25[0-5])$" title="Adres alternatywnego serwera DNS. Przykład: 1.0.0.1" />
+				</label>
+			</figure>
+
+			<div class="flex spaced" style="justify-content: end;">
+				<button name="save">Zapisz</button>
+				<button name="cancel">Anuluj</button>
+			</div>
+		</form>
 	</dialog>
 	<script src="https://d3js.org/d3.v4.min.js" onerror="alert('Nie można załadować biblioteki D3JS dla wykresów. Brak połączenia z internetem?')" defer></script>
 	<script type="text/javascript" src="charts.js" defer></script>

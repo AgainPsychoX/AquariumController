@@ -29,7 +29,7 @@ namespace Lighting {
 		return timepoint;
 	}
 
-	signed char Entry::compareHours(byte hour, byte minute, byte second) {
+	signed char Entry::compareHours(byte hour, byte minute, byte second) const {
 		if (this->hour > hour) return 1;
 		if (this->hour < hour) return -1;
 		if (this->minute > minute) return 1;
@@ -42,10 +42,10 @@ namespace Lighting {
 		return (
 			this->hour == other.hour &&
 			this->minute == other.minute// &&
-			// this->redValue == other.redValue &&
-			// this->greenValue == other.greenValue &&
-			// this->blueValue == other.blueValue &&
-			// this->whiteValue == other.whiteValue
+			// this->red == other.red &&
+			// this->green == other.green &&
+			// this->blue == other.blue &&
+			// this->white == other.white
 		);
 	}
 
@@ -56,42 +56,41 @@ namespace Lighting {
 		snprintf(
 			buf, 32, 
 			"[%3u, %3u, %3u, %3u] @ %02u:%02u", 
-			redValue, greenValue,blueValue, whiteValue,
+			red, green,blue, white,
 			hour, minute
 		);
 		return std::unique_ptr<char[]>(buf);
 	}
 
-	inline bool Entry::isValid() const {
-		return hour < 24;
-	}
-
-	const Entry Entry::invalid {99, 99, 99, 99, 99, 99};
-
-	Entry nextEntry;
-	Entry previousEntry;
+	const Entry* nextEntry;
+	const Entry* previousEntry;
 	uint32_t nextTime;
 	uint32_t previousTime;
-	unsigned short nextEntryIndex;
+	uint8_t nextEntryIndex;
 	bool disable = false;
 
-	void reset() {
+	void resetToDefaultSettings() {
 		// 0% about midnight
-		EEPROM.put(entriesEEPROMOffset + 0 * sizeof(Entry), Entry{0, 0, 0, 0, 0, 0});
+		settings->dayCycleEntries[0] = {
+			.hour = 0, .minute = 0,
+			.red = 0, .green = 0, .blue = 0, .white = 0,
+		};
 		// 100% about noon
-		EEPROM.put(entriesEEPROMOffset + 1 * sizeof(Entry), Entry{12, 0, 255, 255, 255, 255});
+		settings->dayCycleEntries[1] = {
+			.hour = 12, .minute = 0,
+			.red = 255, .green = 255, .blue = 255, .white = 255,
+		};
 		// Rest as invalid
-		for (unsigned int i = 2; i < maxEntriesCount; i++) {
-			EEPROM.put(entriesEEPROMOffset + i * sizeof(Entry), Entry::invalid);
+		for (uint8_t i = 2; i < maxEntriesCount; i++) {
+			settings->dayCycleEntries[i] = { .hour = 255 };
 		}
 	}
 
 	void setup() {
 		if (CHECK_LOG_LEVEL(Lighting, LEVEL_INFO)) {
 			LOG_INFO(Lighting, "Setuping... Entries:");
-			for (unsigned int i = 0; i < maxEntriesCount; i++) {
-				Entry entry;
-				EEPROM.get(entriesEEPROMOffset + i * sizeof(Entry), entry);
+			for (uint8_t i = 0; i < maxEntriesCount; i++) {
+				const Entry& entry = getEntryFromSettings(i);
 				if (entry.isValid()) {
 					LOG_INFO(Lighting, "%2u. %s", i, entry.toCString().get());
 				}
@@ -106,20 +105,19 @@ namespace Lighting {
 		bool previousFound = false;
 
 		// Find next entry after current time
-		for (unsigned int i = 0; i < maxEntriesCount; i++) {
-			Entry entry;
-			EEPROM.get(entriesEEPROMOffset + i * sizeof(Entry), entry);
+		for (uint8_t i = 0; i < maxEntriesCount; i++) {
+			const Entry& entry = getEntryFromSettings(i);
 			if (!entry.isValid()) {
 				continue;
 			}
 			if (entry.compareHours(now.hour(), now.minute(), now.second()) > 0) {
 				nextFound = true;
-				nextEntry = entry;
+				nextEntry = &entry;
 				nextEntryIndex = i;
 				break;
 			}
 			previousFound = true;
-			previousEntry = entry;
+			previousEntry = &entry;
 		}
 
 		// TODO: next found but after day change; use first valid
@@ -127,19 +125,18 @@ namespace Lighting {
 		if (!nextFound) {
 			// If not found, set next entry as first entry of cycle. 
 			// In such case, last entry should be the last entry of cycle.
-			for (unsigned int i = 0; i < maxEntriesCount; i++) {
-				Entry entry;
-				EEPROM.get(entriesEEPROMOffset + i * sizeof(Entry), entry);
+			for (uint8_t i = 0; i < maxEntriesCount; i++) {
+				const Entry& entry = getEntryFromSettings(i);
 				if (!entry.isValid()) {
 					continue;
 				}
 				if (!nextFound) {
 					nextFound = true;
-					nextEntry = entry;
+					nextEntry = &entry;
 					nextEntryIndex = i;
 				}
 				previousFound = true;
-				previousEntry = entry;
+				previousEntry = &entry;
 			}
 		}
 
@@ -151,18 +148,17 @@ namespace Lighting {
 
 		// Find entry before selected next entry, to be previous entry.
 		if (!previousFound) {
-			unsigned short index = nextEntryIndex;
+			uint8_t index = nextEntryIndex;
 			while (true) {
-				Entry entry;
-				EEPROM.get(entriesEEPROMOffset + ((++index) % maxEntriesCount) * sizeof(Entry), entry);
+				const Entry& entry = getEntryFromSettings((++index) % maxEntriesCount);
 				if (!entry.isValid()) {
 					continue;
 				}
-				if (entry == nextEntry) {
+				if (*nextEntry == entry) {
 					break;
 				}
 				previousFound = true;
-				previousEntry = entry;
+				previousEntry = &entry;
 			}
 		}
 
@@ -173,11 +169,11 @@ namespace Lighting {
 		}
 
 		// Calculate timepoints
-		nextTime = nextEntry.getTimepointScheduledAfter(now);
-		previousTime = previousEntry.getTimepointScheduledBefore(now);
+		nextTime = nextEntry->getTimepointScheduledAfter(now);
+		previousTime = previousEntry->getTimepointScheduledBefore(now);
 
-		LOG_DEBUG(Lighting, "Previous entry: %s (%us ago)", previousEntry.toCString().get(), previousTime);
-		LOG_DEBUG(Lighting, "Next entry:     %s (in %us)",  previousEntry.toCString().get(), nextTime);
+		LOG_DEBUG(Lighting, "Previous entry: %s (%us ago)", previousEntry->toCString().get(), previousTime);
+		LOG_DEBUG(Lighting, "Next entry:     %s (in %us)",  previousEntry->toCString().get(), nextTime);
 	}
 
 	void update() {
@@ -192,12 +188,12 @@ namespace Lighting {
 			previousEntry = nextEntry;
 			previousTime = nextTime;
 			do {
-				EEPROM.get(entriesEEPROMOffset + ((++nextEntryIndex) % maxEntriesCount) * sizeof(Entry), nextEntry);
+				nextEntry = &getEntryFromSettings((++nextEntryIndex) % maxEntriesCount);
 			}
-			while (!nextEntry.isValid());
-			nextTime = nextEntry.getTimepointScheduledAfter(now);
+			while (!nextEntry->isValid());
+			nextTime = nextEntry->getTimepointScheduledAfter(now);
 
-			LOG_DEBUG(Lighting, "Next entry: %s (in %us)",  previousEntry.toCString().get(), nextTime);
+			LOG_DEBUG(Lighting, "Next entry: %s (in %us)",  previousEntry->toCString().get(), nextTime);
 		}
 
 		// Update values
@@ -205,29 +201,29 @@ namespace Lighting {
 
 		LOG_TRACE(Lighting, "ratio: %5.3f = %u / %u", ratio, currentTime - previousTime, nextTime - previousTime);
 
-		if (previousEntry.redValue == nextEntry.redValue) {
-			redPWM.set(previousEntry.redValue);
+		if (previousEntry->red == nextEntry->red) {
+			redPWM.set(previousEntry->red);
 		}
 		else {
-			redPWM.set(round(previousEntry.redValue * (1 - ratio) + nextEntry.redValue * (ratio)));
+			redPWM.set(round(previousEntry->red * (1 - ratio) + nextEntry->red * (ratio)));
 		}
-		if (previousEntry.greenValue == nextEntry.greenValue) {
-			greenPWM.set(round(previousEntry.greenValue));
-		}
-		else {
-			greenPWM.set(round(previousEntry.greenValue * (1 - ratio) + nextEntry.greenValue * (ratio)));
-		}
-		if (previousEntry.blueValue == nextEntry.blueValue) {
-			bluePWM.set(round(previousEntry.blueValue));
+		if (previousEntry->green == nextEntry->green) {
+			greenPWM.set(round(previousEntry->green));
 		}
 		else {
-			bluePWM.set(round(previousEntry.blueValue * (1 - ratio) + nextEntry.blueValue * (ratio)));
+			greenPWM.set(round(previousEntry->green * (1 - ratio) + nextEntry->green * (ratio)));
 		}
-		if (previousEntry.whiteValue == nextEntry.whiteValue) {
-			whitePWM.set(round(previousEntry.whiteValue));
+		if (previousEntry->blue == nextEntry->blue) {
+			bluePWM.set(round(previousEntry->blue));
 		}
 		else {
-			whitePWM.set(round(previousEntry.whiteValue * (1 - ratio) + nextEntry.whiteValue * (ratio)));
+			bluePWM.set(round(previousEntry->blue * (1 - ratio) + nextEntry->blue * (ratio)));
+		}
+		if (previousEntry->white == nextEntry->white) {
+			whitePWM.set(round(previousEntry->white));
+		}
+		else {
+			whitePWM.set(round(previousEntry->white * (1 - ratio) + nextEntry->white * (ratio)));
 		}
 	}
 
@@ -243,36 +239,33 @@ namespace Lighting {
 			return;
 		}
 
-		// Format should be like: "#R,G,B,W@HH:mm" (repeated up to 14 times),
+		// Format should be like: "#R,G,B,W@HH:mm" (repeated up to 16 times),
 		// where R,G,B,W are colors values (0-255) and HH:mm is timepoint (hours & minutes).
 		// Note: There is no check is it sorted, but this is assumption!
 		unsigned short entriesCount = 0;
 		do {
-			Entry entry;
+			Entry& entry = getEntryFromSettingsMutable(entriesCount++);
 			offset += 1; // #
-			entry.redValue = atoi(cstr + offset);
-			if (entry.redValue > 99) offset += 4; // 123,
-			else if (entry.redValue > 9) offset += 3; // 12,
+			entry.red = atoi(cstr + offset);
+			if (entry.red > 99) offset += 4; // 123,
+			else if (entry.red > 9) offset += 3; // 12,
 			else offset += 2; // 1,
-			entry.greenValue = atoi(cstr + offset);
-			if (entry.greenValue > 99) offset += 4; // 123,
-			else if (entry.greenValue > 9) offset += 3; // 12,
+			entry.green = atoi(cstr + offset);
+			if (entry.green > 99) offset += 4; // 123,
+			else if (entry.green > 9) offset += 3; // 12,
 			else offset += 2; // 1,
-			entry.blueValue = atoi(cstr + offset);
-			if (entry.blueValue > 99) offset += 4; // 123,
-			else if (entry.blueValue > 9) offset += 3; // 12,
+			entry.blue = atoi(cstr + offset);
+			if (entry.blue > 99) offset += 4; // 123,
+			else if (entry.blue > 9) offset += 3; // 12,
 			else offset += 2; // 1,
-			entry.whiteValue = atoi(cstr + offset);
-			if (entry.whiteValue > 99) offset += 4; // 123@
-			else if (entry.whiteValue > 9) offset += 3; // 12@
+			entry.white = atoi(cstr + offset);
+			if (entry.white > 99) offset += 4; // 123@
+			else if (entry.white > 9) offset += 3; // 12@
 			else offset += 2; // 1@
 			entry.hour = atoi(cstr + offset);
 			offset += 3; // 12: 
 			entry.minute = atoi(cstr + offset);
 			offset += 2; // 12
-
-			EEPROM.put(entriesEEPROMOffset + entriesCount * sizeof(Entry), entry);
-			entriesCount++;
 
 			LOG_DEBUG(Lighting, "handleSetColors() Entry[%2u] -> %s", entriesCount, entry.toCString().get());
 
@@ -284,8 +277,8 @@ namespace Lighting {
 		while (entriesCount < maxEntriesCount);
 
 		// Fill rest with invalid 
-		for (unsigned int i = entriesCount; i < maxEntriesCount; i++) {
-			EEPROM.put(entriesEEPROMOffset + i * sizeof(Entry), Entry::invalid);
+		for (uint8_t i = entriesCount; i < maxEntriesCount; i++) {
+			getEntryFromSettingsMutable(i).invalidate();
 		}
 
 		if (entriesCount == maxEntriesCount && offset < length - 4) {
@@ -303,10 +296,9 @@ namespace Lighting {
 		char response[buffLen];
 		unsigned short offset = 0;
 		response[offset++] = '[';
-		unsigned short entriesCount = 0;
-		for (unsigned int i = 0; i < maxEntriesCount; i++) {
-			Entry entry;
-			EEPROM.get(entriesEEPROMOffset + i * sizeof(Entry), entry);
+		uint8_t entriesCount = 0;
+		for (uint8_t i = 0; i < maxEntriesCount; i++) {
+			const Entry& entry = getEntryFromSettings(i);
 			if (!entry.isValid()) {
 				continue;
 			}
@@ -320,10 +312,10 @@ namespace Lighting {
 					"\"white\":%d,"
 					"\"time\":\"%02d:%02d\""
 				"}",
-				entry.redValue,
-				entry.greenValue,
-				entry.blueValue,
-				entry.whiteValue,
+				entry.red,
+				entry.green,
+				entry.blue,
+				entry.white,
 				entry.hour, entry.minute
 			);
 			entriesCount++;
@@ -346,7 +338,7 @@ namespace Lighting {
 	}
 
 	void handleResetColors() {
-		reset();
+		resetToDefaultSettings();
 		setup();
 		webServer.send(200);
 	}

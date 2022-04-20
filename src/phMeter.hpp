@@ -10,57 +10,20 @@ namespace phMeter {
 
 	constexpr uint8_t samplesCount = 16;
 
-	////////////////////////////////////////
-	// Settings
-
-	enum InterpolationMode : uint8_t {
-		Linear,
-		// TODO: Other interpolation modes
-		// Cosine,
-		// Polynomial,
-		Count,
-	};
-
-	struct CalibrationPoint {
-		float pH;
-		uint16_t adc;
-	};
-	static_assert(sizeof(CalibrationPoint) == 8, "Structures saved on EEPROM must have guaranted size!");
-
-	struct Settings {
-		CalibrationPoint points[3];
-		InterpolationMode mode;
-	};
-	static_assert(sizeof(Settings) == 28, "Structures saved on EEPROM must have guaranted size!");
-
-	Settings settings;
-
-	constexpr unsigned int EEPROMOffset = 0x220;
-
-	void saveSettings() {
-		EEPROM.put(EEPROMOffset, settings);
-	}
-	void readSettings() {
-		EEPROM.get(EEPROMOffset, settings);
-		settings.mode = InterpolationMode::Linear;
-	}
 	void printSettings() {
 		LOG_INFO(phMeter, "Calibration points:");
 		for (uint8_t i = 0; i < 3; i++) {
 			LOG_INFO(phMeter, "%2.4f @ %4u (%.4fV)",
-				settings.points[i].pH, 
-				settings.points[i].adc, 
-				analogMaxVoltage * settings.points[i].adc / analogMax
+				settings->phMeter.pH[i],
+				settings->phMeter.adc[i],
+				analogMaxVoltage * settings->phMeter.adc[i] / analogMax
 			);
 		}
-		switch (settings.mode) {
+		switch (settings->phMeter.mode) {
 			case Linear: LOG_INFO(phMeter, "Mode: Linear"); break;
 			default:     LOG_INFO(phMeter, "Mode: Unknown"); break;
 		}
 	}
-
-	////////////////////////////////////////
-	// Sampling
 
 	using Averager_t = Averager<uint16_t, samplesCount, uint32_t>;
 	Averager_t averager(800);
@@ -72,18 +35,22 @@ namespace phMeter {
 
 	/// Calculates raw value to pH scale value based on calibration.
 	float calculate(uint16 raw) {
-		switch (settings.mode) {
+		switch (settings->phMeter.mode) {
 			case Linear:
-				if (raw <= settings.points[1].adc) {
-					const auto [y0, x0] = settings.points[0];
-					const auto [y1, x1] = settings.points[1];
+				if (raw <= settings->phMeter.adc[1]) {
+					const auto x0 = settings->phMeter.adc[0];
+					const auto y0 = settings->phMeter.pH[0];
+					const auto x1 = settings->phMeter.adc[1];
+					const auto y1 = settings->phMeter.pH[1];
 					const float a = (y0 - y1) / (x0 - x1);
 					const float b = y0 - a * x0;
 					return a * raw + b;
 				}
 				else {
-					const auto [y0, x0] = settings.points[1];
-					const auto [y1, x1] = settings.points[2];
+					const auto x0 = settings->phMeter.adc[1];
+					const auto y0 = settings->phMeter.pH[1];
+					const auto x1 = settings->phMeter.adc[2];
+					const auto y1 = settings->phMeter.pH[2];
 					const float a = (y0 - y1) / (x0 - x1);
 					const float b = y0 - a * x0;
 					return a * raw + b;
@@ -104,7 +71,6 @@ namespace phMeter {
 	}
 
 	void setup() {
-		readSettings();
 		printSettings();
 	}
 }

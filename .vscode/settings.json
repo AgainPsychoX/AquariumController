@@ -1,12 +1,18 @@
 {
 	"cSpell.words": [
 		"Appcache",
+		"bssid",
 		"cyrkulatora",
 		"datetime",
+		"dhcpc",
+		"dhcps",
 		"fontobject",
 		"FPSTR",
+		"getif",
 		"HTTPC",
+		"isany",
 		"mimetable",
+		"netif",
 		"opentype",
 		"pgmspace",
 		"Pinout",

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "common.hpp"
-#include <Arduino.h>
-#include <EEPROM.h>
 #include <memory> // unique_ptr
 #include <DS3231.h> // DateTime
 
@@ -39,32 +37,16 @@ extern PWM<14> whitePWM;
 // Smooth timed controller
 
 namespace Lighting {
-	constexpr unsigned int maxEntriesCount = 14;
-	constexpr unsigned int entriesEEPROMOffset = 0x010;
+	constexpr unsigned int maxEntriesCount = 16;
+	static_assert(maxEntriesCount == sizeof(settings->dayCycleEntries) / sizeof(settings->dayCycleEntries[0]));
 
 	/// Entry for PWM values in certain timepoint.
 	/// Assumption: Entries are sorted in EEPROM.
-	struct Entry {
-		byte hour; // TODO: "disabled" bit?
-		byte minute; // TODO: week day flags by bits?
-		byte redValue;
-		byte greenValue;
-		byte blueValue;
-		byte whiteValue;
-		byte _pad[2];
-
-		Entry() {}
-
-		Entry(byte hour, byte minute, 
-				byte red, byte green, byte blue, byte white)
-			: hour(hour), minute(minute), 
-				redValue(red), greenValue(green), blueValue(blue), whiteValue(white)
-		{}
-
+	struct Entry : DayCycleEntryData {
 		uint32_t getTimepointScheduledAfter(const DateTime& dateTime) const;
 		uint32_t getTimepointScheduledBefore(const DateTime& dateTime) const;
 
-		signed char compareHours(byte hour, byte minute, byte second);
+		signed char compareHours(byte hour, byte minute, byte second) const;
 
 		bool operator==(const Entry& other) const;
 
@@ -72,20 +54,30 @@ namespace Lighting {
 		/// Format: `[255, 255, 255, 255] @ 12:00`.
 		std::unique_ptr<char[]> toCString() const;
 
-		inline bool isValid() const;
-
-		const static Entry invalid;
+		inline void invalidate() {
+			hour |= 0b10000000; // += 127;
+		}
+		inline bool isValid() const {
+			return hour < 24;
+		}
 	};
-	static_assert(sizeof(Entry) == 8, "Structures saved on EEPROM must have guaranted size!");
+	static_assert(sizeof(Entry) == sizeof(DayCycleEntryData));
 
-	extern Entry nextEntry;
-	extern Entry previousEntry;
+	inline const Entry& getEntryFromSettings(uint8_t index) {
+		return reinterpret_cast<const Entry&>(settings->dayCycleEntries[index]);
+	}
+	inline Entry& getEntryFromSettingsMutable(uint8_t index) {
+		return reinterpret_cast<Entry&>(settings->dayCycleEntries[index]);
+	}
+
+	extern const Entry* nextEntry;
+	extern const Entry* previousEntry;
 	extern uint32_t nextTime;
 	extern uint32_t previousTime;
-	extern unsigned short nextEntryIndex;
+	extern uint8_t nextEntryIndex;
 	extern bool disable;
 
-	void reset();
+	void resetToDefaultSettings();
 
 	void setup();
 	void update();
