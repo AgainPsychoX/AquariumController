@@ -368,6 +368,8 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
++ WiFi reconnecting.
++ WiFi settings graying out if DHCP is used and show mask as IP.
 + Make `/config` endpoint use proper GET/POST to avoid lag of printing so much when only setting.
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
 + RESTful API (see https://arduinojson.org/ or https://github.com/cesanta/mjson)

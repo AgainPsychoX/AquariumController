@@ -81,7 +81,7 @@ namespace Network {
 				.bssid_set = 0,
 				.threshold = {
 					.rssi = -127,
-					.authmode = sizeof(DEFAULT_PASSWORD) > 1 ? AUTH_WPA_PSK : AUTH_OPEN,
+					.authmode = sizeof(DEFAULT_PASSWORD) > 1 ? AUTH_WPA_WPA2_PSK : AUTH_OPEN,
 				},
 			};
 			strncpy_P(reinterpret_cast<char*>(conf.ssid), PSTR(DEFAULT_SSID), sizeof(conf.ssid));
@@ -92,10 +92,10 @@ namespace Network {
 			struct softap_config conf = {
 				.ssid_len = sizeof(DEFAULT_SSID),
 				.channel = 1,
-				.authmode = sizeof(DEFAULT_PASSWORD) > 1 ? AUTH_WPA2_PSK : AUTH_OPEN,
+				.authmode = sizeof(DEFAULT_PASSWORD) > 1 ? AUTH_WPA_WPA2_PSK : AUTH_OPEN,
 				.ssid_hidden = 0,
 				.max_connection = 4,
-				.beacon_interval = 500,
+				.beacon_interval = 200,
 			};
 			strncpy_P(reinterpret_cast<char*>(conf.ssid), PSTR(DEFAULT_SSID), sizeof(conf.ssid));
 			strncpy_P(reinterpret_cast<char*>(conf.password), PSTR(DEFAULT_PASSWORD), sizeof(conf.password));
@@ -148,7 +148,7 @@ namespace Network {
 			'0' + settings->network.mode,
 			u.ssid,
 			u.password,
-			'0' + settings->network.mode,
+			'0' + settings->network.staticIP,
 			ip4_addr_printf_unpack(&info.ip),
 			// ip4_addr_printf_unpack(&info.netmask),
 			numberOfSetBits(info.netmask.addr),
@@ -161,7 +161,12 @@ namespace Network {
 
 	void handleConfigArgs() {
 		bool changes = false;
-		
+
+		if (const String& str = webServer.arg("network.reset"); !str.isEmpty()) {
+			resetConfig();
+			changes = true;
+		}
+
 		if (const String& str = webServer.arg("network.mode"); !str.isEmpty()) {
 			settings->network.mode = static_cast<Settings::Network::Mode>(atoi(str.c_str()) % 4);
 			changes = true;
@@ -212,12 +217,17 @@ namespace Network {
 				settings->network.ipInfo.netmask.addr = address.v4();
 			}
 			else {
-				uint8_t maskLength = atoi(str.c_str());
+				const uint8_t maskLength = atoi(str.c_str());
+				uint8_t i = maskLength - 1;
 				settings->network.ipInfo.netmask.addr = 1;
-				while (maskLength--) {
+				while (i--) {
 					settings->network.ipInfo.netmask.addr <<= 1;
 					settings->network.ipInfo.netmask.addr |= 1;
 				}
+				LOG_TRACE(
+					Network, "Setting mask as length %u. Resulting addres: %u.%u.%u.%u", 
+					maskLength, ip4_addr_printf_unpack(&settings->network.ipInfo.netmask)
+				);
 			}
 			changes = true;
 		}
@@ -253,6 +263,8 @@ namespace Network {
 			else {
 				webServer.send(200, WEB_CONTENT_TYPE_APPLICATION_JSON, buffer);
 			}
+			webServer.handleClient();
+			delay(50);
 
 			saveStationConfig(sta_u.conf);
 			saveSoftAPConfig(ap_u.conf);
@@ -387,23 +399,18 @@ namespace Network {
 			wifi_softap_dhcps_start();
 			dhcpSoftAP.begin(&info);
 
+			// Print IP to logs
+			{
+				ip_info info;
+				Network::getIPInfo(info);
+				LOG_INFO(Network, "IP: %u.%u.%u.%u", ip4_addr_printf_unpack(&info.ip));
+			}
+
 			lcd.setCursor(0, 1);
 			lcd.print(F("Hosting AP..."));
 			delay(2000);
 		}
 
-		// if (settings->network.mode != Settings::Network::DISABLED) {
-		// 	// Report IP or error
-		// 	if (WiFi.status() == WL_CONNECTED) {
-		// 		LOG_INFO(Network, "IP: %s", WiFi.localIP().toString().c_str());
-		// 	}
-		// 	else {
-		// 		LOG_ERROR(Network, "Couldn't connect to the network!");
-		// 	}
-		// }
-		// TODO:...
-
-		delay(1000);
 		debugPrint();
 	}
 

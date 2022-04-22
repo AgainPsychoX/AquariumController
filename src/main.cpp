@@ -35,11 +35,11 @@ struct {
 DallasTemperature oneWireThermometers(&oneWire);
 
 LiquidCrystal_I2C lcd(PCF8574_ADDR_A21_A11_A01);
-const uint8_t PROGMEM lcd_customChar_WiFi_best[] { 0x00, 0x1E, 0x01, 0x1C, 0x02, 0x19, 0x05, 0x15 };
+const uint8_t PROGMEM lcd_customChar_WiFi_best[] { 0x1E, 0x01, 0x1C, 0x02, 0x19, 0x05, 0x15, 0x00 };
 const uint8_t PROGMEM lcd_customChar_WiFi_good[] { 0x00, 0x00, 0x1C, 0x02, 0x19, 0x05, 0x15, 0x00 };
 const uint8_t PROGMEM lcd_customChar_WiFi_okay[] { 0x00, 0x00, 0x00, 0x00, 0x18, 0x04, 0x14, 0x00 };
 const uint8_t PROGMEM lcd_customChar_dot_x0y7[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00 };
-const uint8_t PROGMEM lcd_customChar_vline_x0y4[] { 0x00, 0x00, 0x00, 0x00, 0x10, 0x10, 0x10, 0x10 };
+const uint8_t PROGMEM lcd_customChar_vline_x0y4[] { 0x00, 0x00, 0x00, 0x10, 0x10, 0x10, 0x10, 0x00 };
 
 ESP8266WebServer webServer(80);
 
@@ -129,6 +129,9 @@ void setup() {
 
 	// Setup network service (might take a while, incl. LCD animation)
 	Network::setup();
+	if (settings->network.mode == Settings::Network::DISABLED) {
+		showIP = false;
+	}
 	lcd.clear();
 
 	// Initialize water termometer

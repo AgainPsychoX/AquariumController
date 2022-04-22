@@ -672,7 +672,7 @@ const networkSettingsDialog = document.querySelector('dialog#network-settings');
 				}
 				networkSettingsDialog.querySelector(`input[name=mode][value=${state.network.mode & 1 ? 'sta' : 'ap'}]`).checked = true;
 				networkSettingsDialog.querySelector(`input[name=fallback-ap]`).checked = parseBoolean(state.network.mode > 1);
-				networkSettingsDialog.querySelector(`input[name=auto-ip]`).checked = parseBoolean(state.network.static);
+				networkSettingsDialog.querySelector(`input[name=auto-ip]`).checked = !parseBoolean(state.network.static);
 				networkSettingsDialog.showModal();
 			})
 		;
@@ -684,7 +684,7 @@ const networkSettingsDialog = document.querySelector('dialog#network-settings');
 	networkSettingsDialog.querySelector('button[name=save]').addEventListener('click', async (e) => {
 		if (!form.checkValidity()) return;
 
-		if (!prompt("Jesteś pewien, że chcesz zapisać zamiany? Urządzenie zostanie zresetowane.")) return;
+		if (!confirm("Jesteś pewien, że chcesz zapisać zamiany? Urządzenie zostanie zresetowane.")) return;
 
 		e.preventDefault();
 		networkSettingsDialog.classList.add('closing');
