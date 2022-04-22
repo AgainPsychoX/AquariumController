@@ -66,6 +66,9 @@ void setup() {
 	ioExpander.state = 0b00111111;
 	ioExpander.write();
 
+	// Perform some early setup
+	Heating::earlySetup();
+
 	// Initialize Serial console
 	Serial.begin(115200);
 	Serial.println();
