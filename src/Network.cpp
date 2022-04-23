@@ -95,7 +95,7 @@ namespace Network {
 				.authmode = sizeof(DEFAULT_PASSWORD) > 1 ? AUTH_WPA_WPA2_PSK : AUTH_OPEN,
 				.ssid_hidden = 0,
 				.max_connection = 4,
-				.beacon_interval = 200,
+				.beacon_interval = 100,
 			};
 			strncpy_P(reinterpret_cast<char*>(conf.ssid), PSTR(DEFAULT_SSID), sizeof(conf.ssid));
 			strncpy_P(reinterpret_cast<char*>(conf.password), PSTR(DEFAULT_PASSWORD), sizeof(conf.password));
@@ -191,13 +191,16 @@ namespace Network {
 
 		if (const String& str = webServer.arg("network.ssid"); !str.isEmpty()) {
 			strncpy(sta_u.ssid, str.c_str(), sizeof(sta_u.ssid));
-			strncpy(ap_u.ssid,  str.c_str(), sizeof(ap_u.ssid));
-			ap_u.conf.ssid_len = std::max<uint8>(str.length(), sizeof(ap_u.ssid));
-
 			const String& psk = webServer.arg("network.psk");
 			strncpy(sta_u.password, psk.c_str(), sizeof(sta_u.password));
-			strncpy(ap_u.password,  psk.c_str(), sizeof(ap_u.password));
+			changes = true;
+		}
 
+		if (const String& str = webServer.arg("network.ap.ssid"); !str.isEmpty()) {
+			strncpy(ap_u.ssid,  str.c_str(), sizeof(ap_u.ssid));
+			ap_u.conf.ssid_len = std::max<uint8>(str.length(), sizeof(ap_u.ssid));
+			const String& psk = webServer.arg("network.ap.psk");
+			strncpy(ap_u.password,  psk.c_str(), sizeof(ap_u.password));
 			changes = true;
 		}
 

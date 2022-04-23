@@ -380,6 +380,7 @@ There is HTTPS client running every configured interval sending the request with
 + Write rest of API docs.
 + Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
 + Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
++ UI for WiFi settings for AP (SSID/password/channel/hidden).
 + Add circulator night mode, with settable hour:minute (already in EEPROM structure, but unused).
 + Add feeding mode - circulator disable (and maybe special lighting?)
 + Try soft-PWM on io expander (rapid switching? https://www.youtube.com/watch?v=Fsb7kxDxYGw http://sim.okawa-denshi.jp/en/PWMtool.php).
@@ -392,6 +393,7 @@ There is HTTPS client running every configured interval sending the request with
 + Show total running time (from last power-on), under current time at web portal.
 + Try overclock ESP into 160 MHz.
 + Use better web server library (https://github.com/me-no-dev/ESPAsyncWebServer).
++ Make sure no strings are created (allocated) when handling request - allocate them in advance if necessary.
 + Use HTTPS for web server.
 + Use some authorization for web panel config setting.
 + Reuse light cycle 2 bytes instead of hour/minute start/stop bytes for things like pumps or circulator.
