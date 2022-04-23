@@ -316,6 +316,11 @@ void setup() {
 		if (const String& str = webServer.arg("cloudLoggingInterval"); !str.isEmpty()) {
 			CloudLogger::setInterval(atoi(str.c_str()) * 1000);
 		}
+		if (const String& str = webServer.arg("cloudSecret"); !str.isEmpty()) {
+			strncpy(settings->cloud.secret, str.c_str(), 15);
+			char& last = settings->cloud.secret[std::max<uint8_t>(str.length() - 1, sizeof(settings->cloud.secret) - 1)];
+			last = '\0';
+		}
 
 		// Handle network config
 		Network::handleConfigArgs();
