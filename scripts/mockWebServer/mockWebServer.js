@@ -105,12 +105,12 @@ setInterval(() => {
 	/**/ if (config.waterTemperatures.maximal < waterTemperature) cooling = true;
 	else if (waterTemperature <= config.waterTemperatures.optimal) cooling = false;
 
-	heatingStatus = heating ? 1 : cooling ? 2 : 0;
+	heatingStatus = heating ? 1 : cooling ? -1 : 0;
 	switch (heatingStatus) {
 		case 1:
 			waterTemperature += 0.1 * speed;
 			break;
-		case 2:
+		case -1:
 			waterTemperature -= 0.1 * speed;
 			break;
 	}

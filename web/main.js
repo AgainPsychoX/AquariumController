@@ -405,8 +405,11 @@ const booleanStatusBits = [
 						case 'heatingStatus': {
 							const output = document.querySelector(`output[name=heatingStatus]`);
 							const status = parseInt(value);
-							output.value = status == 1 ? '🔥↗' : status == 2 ? '❄↘' : '〜';
 							output.dataset.value = status;
+							output.value = status > 0 ? '🔥↗' : status < 0 ? '❄↘' : '〜';
+							if (status != 0) {
+								output.closest('label').querySelector('span').innerText = status > 0 ? 'Ogrzewanie' : 'Chłodzenie';
+							}
 							break;
 						}
 						case 'rssi': {

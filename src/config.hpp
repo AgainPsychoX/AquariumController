@@ -8,6 +8,7 @@ constexpr auto debugLevel = DEBUG;
 
 USE_LOG_LEVEL_DEFAULT(DEBUG);
 USE_LOG_LEVEL(Network,          LEVEL_INFO);
+USE_LOG_LEVEL(Web,              LEVEL_INFO);
 USE_LOG_LEVEL(Lighting,         LEVEL_INFO);
 USE_LOG_LEVEL(MineralsPumps,    LEVEL_INFO);
 USE_LOG_LEVEL(CloudLogger,      LEVEL_INFO);
@@ -19,6 +20,8 @@ USE_LOG_LEVEL(phMeter,          LEVEL_INFO);
 
 /// Timeout after which connection
 constexpr unsigned long timeoutForConnectingWiFi = 5000; // ms
+
+#define WIFI_ROUND_RSSI_CHARS 0
 
 ////////////////////////////////////////////////////////////////////////////////
 // Settings structure (persistet in EEPROM)

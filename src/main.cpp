@@ -35,11 +35,19 @@ struct {
 DallasTemperature oneWireThermometers(&oneWire);
 
 LiquidCrystal_I2C lcd(PCF8574_ADDR_A21_A11_A01);
-const uint8_t PROGMEM lcd_customChar_WiFi_best[] { 0x1E, 0x01, 0x1C, 0x02, 0x19, 0x05, 0x15, 0x00 };
-const uint8_t PROGMEM lcd_customChar_WiFi_good[] { 0x00, 0x00, 0x1C, 0x02, 0x19, 0x05, 0x15, 0x00 };
-const uint8_t PROGMEM lcd_customChar_WiFi_okay[] { 0x00, 0x00, 0x00, 0x00, 0x18, 0x04, 0x14, 0x00 };
-const uint8_t PROGMEM lcd_customChar_dot_x0y7[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00 };
-const uint8_t PROGMEM lcd_customChar_vline_x0y4[] { 0x00, 0x00, 0x00, 0x10, 0x10, 0x10, 0x10, 0x00 };
+#if WIFI_ROUND_RSSI_CHARS
+const uint8_t PROGMEM lcd_customChar_RSSI_weak[]   { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x10 };
+const uint8_t PROGMEM lcd_customChar_RSSI_okay[]   { 0x00, 0x00, 0x00, 0x00, 0x18, 0x04, 0x14, 0x14 };
+const uint8_t PROGMEM lcd_customChar_RSSI_good[]   { 0x00, 0x00, 0x1C, 0x02, 0x19, 0x05, 0x15, 0x15 };
+const uint8_t PROGMEM lcd_customChar_RSSI_best[]   { 0x1E, 0x01, 0x1C, 0x02, 0x19, 0x05, 0x15, 0x15 };
+const uint8_t PROGMEM lcd_customChar_RSSI_best_2[] { 0x00, 0x00, 0x00, 0x10, 0x10, 0x10, 0x10, 0x10 };
+#else
+const uint8_t PROGMEM lcd_customChar_RSSI_weak[]   { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x10 };
+const uint8_t PROGMEM lcd_customChar_RSSI_okay[]   { 0x00, 0x00, 0x00, 0x00, 0x04, 0x04, 0x14, 0x14 };
+const uint8_t PROGMEM lcd_customChar_RSSI_good[]   { 0x00, 0x00, 0x01, 0x01, 0x05, 0x05, 0x15, 0x15 };
+const uint8_t PROGMEM lcd_customChar_RSSI_best[]   { 0x00, 0x00, 0x01, 0x01, 0x05, 0x05, 0x15, 0x15 };
+const uint8_t PROGMEM lcd_customChar_RSSI_best_2[] { 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10 };
+#endif
 
 ESP8266WebServer webServer(80);
 
@@ -101,11 +109,11 @@ void setup() {
 	// Initialize display
 	lcd.begin(20, 2);
 	lcd.clear();
-	lcd.createChar(1, lcd_customChar_dot_x0y7);
-	lcd.createChar(2, lcd_customChar_WiFi_okay);
-	lcd.createChar(3, lcd_customChar_WiFi_good);
-	lcd.createChar(4, lcd_customChar_WiFi_best);
-	lcd.createChar(5, lcd_customChar_vline_x0y4);
+	lcd.createChar(1, lcd_customChar_RSSI_weak);
+	lcd.createChar(2, lcd_customChar_RSSI_okay);
+	lcd.createChar(3, lcd_customChar_RSSI_good);
+	lcd.createChar(4, lcd_customChar_RSSI_best);
+	lcd.createChar(5, lcd_customChar_RSSI_best_2);
 
 	// Initialize EEPROM
 	{
@@ -169,7 +177,7 @@ void setup() {
 				"\"rtcTemperature\":%.2f,"
 				"\"phLevel\":%.6f,\"phRaw\":%u,"
 				"\"red\":%d,\"green\":%d,\"blue\":%d,\"white\":%d,"
-				"\"heatingStatus\":%u,"
+				"\"heatingStatus\":%d,"
 				"\"isRefilling\":%d,"
 				"\"isRefillTankLow\":%d,"
 				"\"timestamp\":\"%04d-%02d-%02dT%02d:%02d:%02d\","

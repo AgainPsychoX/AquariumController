@@ -288,7 +288,7 @@ output[name=heatingStatus][data-value="0"] {
 output[name=heatingStatus][data-value="1"] {
 	color: OrangeRed;
 }
-output[name=heatingStatus][data-value="2"] {
+output[name=heatingStatus][data-value="-1"] {
 	color: SteelBlue;
 }
 

@@ -7,13 +7,13 @@ namespace Heating {
 	constexpr byte heatingPin = 0; // on IO expander
 
 	bool isCooling() {
-		return digitalRead(coolingPin) == LOW;
+		return digitalRead(coolingPin) == HIGH;
 	}
 	void coolingOn() {
-		digitalWrite(coolingPin, LOW);
+		digitalWrite(coolingPin, HIGH);
 	}
 	void coolingOff() {
-		digitalWrite(coolingPin, HIGH);
+		digitalWrite(coolingPin, LOW);
 	}
 
 	bool isHeating() {
@@ -26,10 +26,10 @@ namespace Heating {
 		ioExpander.digitalWrite(heatingPin, HIGH);
 	}
 
-	enum Status : uint8_t {
+	enum Status : int8_t {
 		NONE = 0,
 		HEATING = 1,
-		COOLING = 2,
+		COOLING = -1,
 	};
 
 	Status getStatus() {
