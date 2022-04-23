@@ -17,13 +17,23 @@ namespace Heating {
 	}
 
 	bool isHeating() {
-		return ioExpander.digitalRead(heatingPin) == LOW;
+		return ioExpander.digitalReadCached(heatingPin) == LOW;
 	}
 	void heatingOn() {
 		ioExpander.digitalWrite(heatingPin, LOW);
 	}
 	void heatingOff() {
 		ioExpander.digitalWrite(heatingPin, HIGH);
+	}
+
+	enum Status : uint8_t {
+		NONE = 0,
+		HEATING = 1,
+		COOLING = 2,
+	};
+
+	Status getStatus() {
+		return isHeating() ? HEATING : isCooling() ? COOLING : NONE;
 	}
 
 	void update(float temperature) {
@@ -61,6 +71,8 @@ namespace Heating {
 	}
 
 	void setup() {
-		settings->temperatures.optimal = (settings->temperatures.maximal + settings->temperatures.minimal) / 2;
+		if (settings->temperatures.optimal <= settings->temperatures.minimal || settings->temperatures.maximal <= settings->temperatures.optimal) {
+			settings->temperatures.optimal = (settings->temperatures.maximal + settings->temperatures.minimal) / 2;
+		}
 	}
 };

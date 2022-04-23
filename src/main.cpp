@@ -169,7 +169,7 @@ void setup() {
 				"\"rtcTemperature\":%.2f,"
 				"\"phLevel\":%.6f,\"phRaw\":%u,"
 				"\"red\":%d,\"green\":%d,\"blue\":%d,\"white\":%d,"
-				"\"isHeating\":%d,"
+				"\"heatingStatus\":%u,"
 				"\"isRefilling\":%d,"
 				"\"isRefillTankLow\":%d,"
 				"\"timestamp\":\"%04d-%02d-%02dT%02d:%02d:%02d\","
@@ -179,7 +179,7 @@ void setup() {
 			ds3231.getTemperature(),
 			phMeter::getAverage(), phMeter::getRawAverage(),
 			redPWM.get(), greenPWM.get(), bluePWM.get(), whitePWM.get(),
-			Heating::isHeating(),
+			Heating::getStatus(),
 			WaterLevel::refillingRequired,
 			WaterLevel::backupTankLow,
 			// Format should be like: "2004-02-12T15:19:21" (without time zones)
@@ -215,8 +215,9 @@ void setup() {
 		if (const String& str = webServer.arg("forceColors"); !str.isEmpty()) Lighting::disable = parseBoolean(str.c_str());
 
 		// Handle heating config options
-		if (const String& str = webServer.arg("heatingMinTemperature"); !str.isEmpty()) settings->temperatures.minimal = atof(str.c_str());
-		if (const String& str = webServer.arg("heatingMaxTemperature"); !str.isEmpty()) settings->temperatures.maximal = atof(str.c_str());
+		if (const String& str = webServer.arg("waterTemperatures.minimal"); !str.isEmpty()) settings->temperatures.minimal = atof(str.c_str());
+		if (const String& str = webServer.arg("waterTemperatures.optimal"); !str.isEmpty()) settings->temperatures.optimal = atof(str.c_str());
+		if (const String& str = webServer.arg("waterTemperatures.maximal"); !str.isEmpty()) settings->temperatures.maximal = atof(str.c_str());
 
 		// Handle circulator config options
 		if (const String& str = webServer.arg("circulatorActiveTime"); !str.isEmpty()) settings->circulator.activeTime = atoi(str.c_str()) * 1000;
@@ -320,8 +321,11 @@ void setup() {
 		int ret = snprintf_P(
 			buffer, bufferLength,
 			PSTR("{"
-				"\"heatingMinTemperature\":%.2f,"
-				"\"heatingMaxTemperature\":%.2f,"
+				"\"waterTemperatures\":{"
+					"\"minimal\":%.2f,"
+					"\"optimal\":%.2f,"
+					"\"maximal\":%.2f"
+				"},"
 				"\"circulatorActiveTime\":%u,"
 				"\"circulatorPauseTime\":%u,"
 				"\"mineralsPumps\":{"
@@ -342,6 +346,7 @@ void setup() {
 				"\"cloudLoggingInterval\":%u"
 			"}"),
 			settings->temperatures.minimal,
+			settings->temperatures.optimal,
 			settings->temperatures.maximal,
 			static_cast<unsigned int>(settings->circulator.activeTime / 1000),
 			static_cast<unsigned int>(settings->circulator.pauseTime / 1000),
@@ -576,7 +581,13 @@ void loop() {
 			lcd.print(F("   "));
 
 			// Show heating status
-			lcd.write(Heating::isHeating() ? 'G' : ' '); // G - Grzałka
+			char c = ' ';
+			switch (Heating::getStatus()) {
+				case Heating::Status::HEATING: c = 'G'; break; // G - Grzałka
+				case Heating::Status::COOLING: c = 'W'; break; // W - Wiatrak
+				default: break;
+			}
+			lcd.write(c); 
 		}
 	}
 }

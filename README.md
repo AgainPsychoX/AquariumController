@@ -6,7 +6,7 @@
 + Summarized status display on 2x20 LED.
 + Portal website hosted over Wi-Fi with status and configuration.
 + Lights controls with day schedule configuration and smooth transitions.
-+ Water conditioner, with heating controller by thermometer.
++ Water conditioner, with heating/cooling controller by thermometer.
 + Water level detection and refilling.
 + Simple circulator controller (periodical)
 + Dosing minerals/micro-elements with pumps.
@@ -52,7 +52,7 @@ Hardware consists of:
 | SC          | 11          | ?       | PWM     | Free                          | Free.                        |
 | SO          | 7           | ?       | PWM     | Free                          | Free.                        |
 | SK          | 6           | ?       | PWM     | Free                          | Free.                        |
-| D0          | 16          | ?       | Digital | Free                          | Free, wake.                  |
+| D0          | 16          | ?       | Digital | Water cooling                 | Wake/sleep unusable anymore. |
 | D1          | 5           | Special | Digital | SCL (I2C)                     |                              |
 | D2          | 4           | Special | Digital | SDA (I2C)                     |                              |
 | D3          | 0           | ?       | Digital | Free                          | Free, flash.                 |
@@ -69,7 +69,7 @@ Hardware consists of:
 
 | Pin | Mode    | Designation                        | Notes                   |
 |-----|---------|------------------------------------|-------------------------|
-| 0   | Output  | Heating                            | `LOW` if heating.       |
+| 0   | Output  | Water heating                      | `LOW` if heating.       |
 | 1   | Output  | Water refilling                    | `LOW` if refilling.     |
 | 2   | Output  | Minerals pump - Ca                 | `LOW` when pumping.     |
 | 3   | Output  | Water circulator                   | `LOW` when active.      |
@@ -131,7 +131,7 @@ Hardware consists of:
 * Web server,
 * Network code (connect to configured network, incl. IP configuration; or host AP)
 * Lights controller,
-* Heating controller,
+* Water temperature controller (heating/cooling),
 * Circulator controller,
 * Cloud logging controller,
 * Minerals pumps controller,
@@ -176,7 +176,7 @@ Returns:
 	"blue": 255,
 	"white": 0,
 	
-	"isHeating": true,
+	"heatingStatus": 2,
 	"isRefilling": false,
 	"isRefillTankLow": false,
 	
@@ -199,8 +199,9 @@ blue=255
 white=255
 forceColors=true
 
-heatingMinTemperature=22.25
-heatingMaxTemperature=23.75
+waterTemperatures.minimal=22.50
+waterTemperatures.optimal=24.00
+waterTemperatures.maximal=25.50
 
 circulatorActiveTime=10
 circulatorPauseTime=5
@@ -238,8 +239,11 @@ cloudLoggingInterval=10
 Returns:
 ```json
 {
-	"heatingMinTemperature": 22.25,
-	"heatingMaxTemperature": 23.75,
+	"waterTemperatures": {
+		"minimal": 22.50,
+		"optimal": 24.00,
+		"maximal": 25.50
+	},
 	
 	"circulatorActiveTime": 10,
 	"circulatorPauseTime":  10,

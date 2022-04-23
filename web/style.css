@@ -282,12 +282,16 @@ output.error {
 	color: FireBrick;
 }
 
-output[name=heating] {
-	color: SteelBlue;
+output[name=heatingStatus][data-value="0"] {
+	color: gray;
 }
-output[name=heating].active {
+output[name=heatingStatus][data-value="1"] {
 	color: OrangeRed;
 }
+output[name=heatingStatus][data-value="2"] {
+	color: SteelBlue;
+}
+
 output[name=waterLevel].active {
 	color: RoyalBlue;
 }

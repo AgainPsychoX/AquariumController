@@ -361,7 +361,6 @@ document.querySelector('#colors button[name=reset]').addEventListener('click', (
 // Status
 
 const booleanStatusBits = [
-	{key: 'isHeating',       output: 'heating',         true: '🔥↗', false: '❄↘'},
 	{key: 'isRefilling',     output: 'waterLevel',      true: '💧💦↗', false: 'OK'},
 	{key: 'isRefillTankLow', output: 'refillTankLevel', true: 'Niski', false: 'OK'},
 ];
@@ -403,6 +402,13 @@ const booleanStatusBits = [
 							}
 							break;
 						}
+						case 'heatingStatus': {
+							const output = document.querySelector(`output[name=heatingStatus]`);
+							const status = parseInt(value);
+							output.value = status == 1 ? '🔥↗' : status == 2 ? '❄↘' : '〜';
+							output.dataset.value = status;
+							break;
+						}
 						case 'rssi': {
 							rssiOutput.classList.remove('error');
 							if (value <= 9) {
@@ -411,7 +417,7 @@ const booleanStatusBits = [
 							}
 							else {
 								rssiOutput.style.color = 'black';
-								rssiOutput.innerText = '?';
+								rssiOutput.innerText = '? (AP)';
 							}
 							break;
 						}
@@ -471,13 +477,14 @@ const booleanStatusBits = [
 // Settings
 
 const byValueSettings = [
-	'heatingMinTemperature', 
-	'heatingMaxTemperature', 
+	'waterTemperatures.minimal', 
+	'waterTemperatures.optimal', 
+	'waterTemperatures.maximal', 
 	'circulatorActiveTime', 
 	'circulatorPauseTime',
 	'cloudLoggingInterval',
 ];
-const byValueSettingsInputs = Object.fromEntries(byValueSettings.map(name => [name, document.querySelector(`input[name=${name}]`)]));
+const byValueSettingsInputs = Object.fromEntries(byValueSettings.map(name => [name, document.querySelector(`input[name=${CSS.escape(name)}]`)]));
 
 function parseTimeInput(input) {
 	const h = parseInt(input.value);
@@ -511,6 +518,15 @@ for (const input of Object.values(byValueSettingsInputs)) {
 byValueSettingsInputs['cloudLoggingInterval'].addEventListener('change', function () {
 	restartChartsUpdate(parseTimeInput(this));
 })
+
+const autoOptimalTemperatureAsAverage = true;
+if (autoOptimalTemperatureAsAverage) {
+	const [minimal, optimal, maximal] = ['minimal', 'optimal', 'maximal'].map(key => document.querySelector(`input[name=${CSS.escape(`waterTemperatures.${key}`)}`));
+	optimal.closest('label').style.display = 'none';
+	const update = () => optimal.value = ((parseFloat(minimal.value) + parseFloat(maximal.value)) / 2 * 100) / 100;
+	minimal.addEventListener('change', update);
+	maximal.addEventListener('change', update);
+}
 
 const minerals = [
 	{key: 'Ca', name: 'Chlorek wapnia CaCl₂'},
@@ -710,13 +726,9 @@ const networkSettingsDialog = document.querySelector('dialog#network-settings');
 fetch(`${baseHost}/config`)
 	.then(response => response.json())
 	.then(state => {
-		for (let key in state) {
+		for (const key in state) {
 			const value = state[key];
 			switch (key) {
-				case 'heatingMinTemperature':
-				case 'heatingMaxTemperature':
-					byValueSettingsInputs[key].value = parseFloat(value).toFixed(2);
-					break;
 				case 'circulatorActiveTime':
 				case 'circulatorPauseTime':
 				case 'cloudLoggingInterval':
@@ -730,6 +742,12 @@ fetch(`${baseHost}/config`)
 						restartChartsUpdate(seconds);
 					}
 					break;
+			}
+		}
+
+		if (state.waterTemperatures) {
+			for (const [key, value] of Object.entries(state.waterTemperatures)) {
+				document.querySelector(`input[name=${CSS.escape(`waterTemperatures.${key}`)}]`).value = parseFloat(value).toFixed(2);
 			}
 		}
 

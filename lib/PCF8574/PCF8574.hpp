@@ -22,9 +22,13 @@ struct PCF8574 {
 		Wire.endTransmission();
 	}
 
+	inline bool digitalReadCached(byte pin) {
+		return (state >> pin) & 1;
+	}
+
 	bool digitalRead(byte pin) {
 		read();
-		return (state >> pin) & 1;
+		return digitalReadCached(pin);
 	}
 	void digitalWrite(byte pin, bool value) {
 		if (value) {

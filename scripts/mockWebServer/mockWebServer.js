@@ -29,8 +29,11 @@ const defaultColorCycle = [
 const noise = (x, r = 0.3, e = 0.4, pi = 0.5) => Math.sin(x * r) + Math.sin(x * e * Math.E) + Math.sin(x * pi * Math.PI);
 const speed = 1 / 1;
 const config = {
-	heatingMinTemperature: 21.75,
-	heatingMaxTemperature: 24.25,
+	waterTemperatures: {
+		minimal: 21.75,
+		optimal: 22.00,
+		maximal: 24.25,
+	},
 	circulatorActiveTime: 5,
 	circulatorPauseTime: 7,
 	cloudLoggingInterval: 1 * 60,
@@ -71,12 +74,14 @@ let waterTemperature = 22.0;
 let phReal;
 let phRaw;
 let phLevel;
-let isHeating = false;
+let heating = false;
+let cooling = false;
+let heatingStatus = 0;
 
-const airToWaterTemperatureConversionRatio = 0.0001;
+const airToWaterTemperatureConversionRatio = 0.01 * speed;
 setInterval(() => {
 	const x = Date.now() * speed;
-	airTemperature = 22 + noise(x * 0.001) * 2;
+	airTemperature = 22 + noise(x * 0.0001) * 2;
 	waterTemperature = (airTemperature * airToWaterTemperatureConversionRatio + waterTemperature) / (airToWaterTemperatureConversionRatio + 1),
 
 	phReal = 7.6 + noise(x * 0.0001) / 3 / 2;
@@ -92,14 +97,22 @@ setInterval(() => {
 		phLevel = a * phRaw + b;
 	}
 
-	if (config.heatingMaxTemperature < waterTemperature) {
-		isHeating = false;
-	}
-	else if (waterTemperature < config.heatingMinTemperature) {
-		isHeating = true;
-	}
-	if (isHeating) {
-		waterTemperature += 0.01;
+	config.waterTemperatures.optimal = Math.round((config.waterTemperatures.maximal + config.waterTemperatures.minimal) / 2 * 100) / 100;
+
+	/**/ if (config.waterTemperatures.optimal <= waterTemperature) heating = false;
+	else if (waterTemperature < config.waterTemperatures.minimal) heating = true;
+
+	/**/ if (config.waterTemperatures.maximal < waterTemperature) cooling = true;
+	else if (waterTemperature <= config.waterTemperatures.optimal) cooling = false;
+
+	heatingStatus = heating ? 1 : cooling ? 2 : 0;
+	switch (heatingStatus) {
+		case 1:
+			waterTemperature += 0.1 * speed;
+			break;
+		case 2:
+			waterTemperature -= 0.1 * speed;
+			break;
 	}
 
 	if (!config.forceColors) {
@@ -123,7 +136,7 @@ app.get('/status', (req, res) => {
 			green: Math.round(green),
 			blue: Math.round(blue),
 			white: Math.round(white),
-			isHeating,
+			heatingStatus,
 			isRefilling: false,
 			isRefillTankLow: false,
 			timestamp: new Date().toJSON(),
@@ -153,12 +166,9 @@ app.get('/config', (req, res) => {
 	if (req.query.cloudLoggingInterval) {
 		config.cloudLoggingInterval = parseInt(req.query.cloudLoggingInterval);
 	}
-	if (req.query.heatingMinTemperature) {
-		config.heatingMinTemperature = parseFloat(req.query.heatingMinTemperature);
-	}
-	if (req.query.heatingMaxTemperature) {
-		config.heatingMaxTemperature = parseFloat(req.query.heatingMaxTemperature);
-	}
+	if (req.query['waterTemperatures.minimal']) config.waterTemperatures.minimal = parseFloat(req.query['waterTemperatures.minimal']);
+	if (req.query['waterTemperatures.optimal']) config.waterTemperatures.optimal = parseFloat(req.query['waterTemperatures.optimal']);
+	if (req.query['waterTemperatures.maximal']) config.waterTemperatures.maximal = parseFloat(req.query['waterTemperatures.maximal']);
 	for (const key of ['ca', 'mg', 'kh']) {
 		if (req.query[`mineralPumps.${key}.time`]) {
 			config.mineralsPumps[key].time = parseInt(req.query[`mineralPumps.${key}.time`]);
