@@ -6,13 +6,17 @@ namespace Heating {
 	constexpr byte coolingPin = D0; // D0
 	constexpr byte heatingPin = 0; // on IO expander
 
+	bool coolingActive;
+
 	bool isCooling() {
-		return digitalRead(coolingPin) == HIGH;
+		return coolingActive;
 	}
 	void coolingOn() {
+		coolingActive = true;
 		digitalWrite(coolingPin, HIGH);
 	}
 	void coolingOff() {
+		coolingActive = false;
 		digitalWrite(coolingPin, LOW);
 	}
 
@@ -27,12 +31,17 @@ namespace Heating {
 	}
 
 	enum Status : int8_t {
+		COOLING = -1,
 		NONE = 0,
 		HEATING = 1,
-		COOLING = -1,
 	};
 
 	Status getStatus() {
+		LOG_TRACE(
+			Heating, "Status %s = %d", 
+			isHeating() ? "HEATING" : isCooling() ? "COOLING" : "NONE",
+			isHeating() ? HEATING : isCooling() ? COOLING : NONE
+		);
 		return isHeating() ? HEATING : isCooling() ? COOLING : NONE;
 	}
 
