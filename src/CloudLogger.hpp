@@ -19,7 +19,7 @@ namespace CloudLogger {
 	}
 
 	inline bool isEnabled() {
-		return getInterval() != 0;
+		return getInterval() != 0 && WiFi.getMode() == WIFI_STA && WiFi.status() == WL_CONNECTED;
 	}
 
 #if CLOUDLOGGER_SECURE
@@ -74,7 +74,6 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 
 			// Prepare HTTPS client
 			httpClient.begin(sslClient, F("https://script.google.com/macros/s/AKfycbzNjb9VDXi9RayxOderzEnBSd-2OY8O6I-WqUD0YJTDE5wRQWC0/exec"));
-			httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
 
 			// Prepare request body
 			DateTime now = rtc.now();
@@ -149,5 +148,9 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 		sslClient.setInsecure();
 		sslClient.setCiphersLessSecure();
 #endif
+
+		// Prepare HTTP client
+		httpClient.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
+		httpClient.setTimeout(timeoutForCloudLogger);
 	}
 }

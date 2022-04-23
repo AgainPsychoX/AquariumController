@@ -18,8 +18,9 @@ USE_LOG_LEVEL(phMeter,          LEVEL_INFO);
 
 #define CLOUDLOGGER_SECURE 0
 
-/// Timeout after which connection
+/// Timeouts for networking
 constexpr unsigned long timeoutForConnectingWiFi = 5000; // ms
+constexpr uint16_t timeoutForCloudLogger = 2000; // ms
 
 #define WIFI_ROUND_RSSI_CHARS 0
 

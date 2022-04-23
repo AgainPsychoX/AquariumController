@@ -372,7 +372,6 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
-+ WiFi reconnecting.
 + WiFi settings graying out if DHCP is used and show mask as IP.
 + Make `/config` endpoint use proper GET/POST to avoid lag of printing so much when only setting.
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
@@ -381,6 +380,7 @@ There is HTTPS client running every configured interval sending the request with
 + Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
 + Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
 + UI for WiFi settings for AP (SSID/password/channel/hidden).
++ Safe WiFi reconnecting and device restarting - pumps might be running!
 + Add circulator night mode, with settable hour:minute (already in EEPROM structure, but unused).
 + Add feeding mode - circulator disable (and maybe special lighting?)
 + Try soft-PWM on io expander (rapid switching? https://www.youtube.com/watch?v=Fsb7kxDxYGw http://sim.okawa-denshi.jp/en/PWMtool.php).
