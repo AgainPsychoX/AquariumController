@@ -197,10 +197,25 @@ namespace Network {
 		}
 
 		if (const String& str = webServer.arg("network.ap.ssid"); !str.isEmpty()) {
-			strncpy(ap_u.ssid,  str.c_str(), sizeof(ap_u.ssid));
+			strncpy(ap_u.ssid, str.c_str(), sizeof(ap_u.ssid));
 			ap_u.conf.ssid_len = std::max<uint8>(str.length(), sizeof(ap_u.ssid));
 			const String& psk = webServer.arg("network.ap.psk");
-			strncpy(ap_u.password,  psk.c_str(), sizeof(ap_u.password));
+			if (psk.length() > 0) {
+				ap_u.conf.authmode = AUTH_WPA_WPA2_PSK;
+				strncpy(ap_u.password, psk.c_str(), sizeof(ap_u.password));
+			}
+			else {
+				ap_u.conf.authmode = AUTH_OPEN;
+				memset(ap_u.password, 0, sizeof(ap_u.password));
+			}
+			changes = true;
+		}
+
+		if (const String& str = webServer.arg("network.ap.channel"); !str.isEmpty()) {
+			uint8_t channel = atoi(str.c_str()) % 14;
+			if (channel != 0) {
+				ap_u.conf.channel = channel;
+			}
 			changes = true;
 		}
 
