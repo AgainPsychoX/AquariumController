@@ -126,6 +126,7 @@ void setup() {
 			settings->resetToDefault();
 			Network::resetConfig();
 			Lighting::resetToDefaultSettings();
+			settings->prepareForSave();
 
 			EEPROM.commit();
 			lcd.setCursor(0, 0);
@@ -396,8 +397,13 @@ void setup() {
 	// });
 
 	webServer.on(F("/saveEEPROM"), []() {
+		LOG_DEBUG(EEPROM, "Preparing to save EEPROM");
+		LOG_TRACE(EEPROM, "settings ptr = %p", settings);
+		LOG_TRACE(EEPROM, "current checksum    = %u", settings->checksum);
+		LOG_TRACE(EEPROM, "calculated checksum = %u", settings->calculateChecksum());
 		if (settings->prepareForSave()) {
 			EEPROM.commit();
+			LOG_DEBUG(EEPROM, "EEPROM saved");
 		}
 		webServer.send(200);
 	});

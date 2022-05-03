@@ -8,6 +8,7 @@ constexpr auto debugLevel = DEBUG;
 
 USE_LOG_LEVEL_DEFAULT(DEBUG);
 USE_LOG_LEVEL(Network,          LEVEL_INFO);
+USE_LOG_LEVEL(EEPROM,           LEVEL_INFO);
 USE_LOG_LEVEL(Web,              LEVEL_INFO);
 USE_LOG_LEVEL(Lighting,         LEVEL_INFO);
 USE_LOG_LEVEL(MineralsPumps,    LEVEL_INFO);
@@ -73,7 +74,7 @@ struct Settings {
 
 	uint32_t calculateChecksum() {
 		constexpr uint16_t prefixLength = offsetof(Settings, checksum) + sizeof(checksum);
-		return crc32(this + prefixLength, sizeof(Settings) - prefixLength);
+		return crc32(reinterpret_cast<uint8_t*>(this) + prefixLength, sizeof(Settings) - prefixLength);
 	}
 
 	bool prepareForSave() {
@@ -207,7 +208,6 @@ struct Settings {
 	void resetToDefault() {
 		new (this) Settings(); // will apply all defaults
 		network.mode = Network::Mode::AP;
-		checksum = calculateChecksum();
 	}
 };
 static_assert(0x020 == offsetof(Settings, temperatures));
