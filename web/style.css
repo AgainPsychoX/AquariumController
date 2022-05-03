@@ -17,8 +17,18 @@ a {
 	text-decoration: none;
 	color: dodgerblue;
 }
-a:hover {
-	color: skyblue;
+@media (hover: hover) {
+	a:hover {
+		color: skyblue;
+	}
+}
+@media (pointer: coarse) {
+	a {
+		padding: 2px;
+	}
+	a:hover {
+		color: dodgerblue;
+	}
 }
 
 h1, h2, h3, h4, p, ul, ol, figure, label {
