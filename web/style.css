@@ -282,9 +282,6 @@ output.error {
 	color: FireBrick;
 }
 
-output[name=heatingStatus][data-value="0"] {
-	color: gray;
-}
 output[name=heatingStatus][data-value="1"] {
 	color: OrangeRed;
 }
