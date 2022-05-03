@@ -377,7 +377,6 @@ There is HTTPS client running every configured interval sending the request with
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
 + RESTful API (see https://arduinojson.org/ or https://github.com/cesanta/mjson)
 + Write rest of API docs.
-+ Add favicon for web (https://icons8.com/icons/set/aquarium-favicon)
 + Optional color slider transformation (illusion of control, first parts of slider affect lesser part of raw value).
 + UI for WiFi settings for AP (SSID/password/channel/hidden).
 + Safe WiFi reconnecting and device restarting - pumps might be running!
