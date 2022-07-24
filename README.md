@@ -143,6 +143,10 @@ Hardware consists of:
 
 Web content (`web` directory) is prepared by `prepareWebArduino.js` script into `src/webEncoded` as compressed, allowing easy embedding in web server code with simple macros.
 
+#### Screenshot
+
+![Screenshot](docs/web-screenshot.png)
+
 #### Web API
 
 | Request                    | Description                                                                              |
