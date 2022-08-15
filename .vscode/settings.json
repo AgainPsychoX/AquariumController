@@ -1,7 +1,9 @@
 {
 	"cSpell.words": [
 		"Appcache",
+		"authmode",
 		"bssid",
+		"CLOUDLOGGER",
 		"cyrkulatora",
 		"datetime",
 		"dhcpc",
@@ -11,6 +13,7 @@
 		"getif",
 		"HTTPC",
 		"isany",
+		"lums",
 		"mimetable",
 		"netif",
 		"opentype",
@@ -20,9 +23,13 @@
 		"PROGMEM",
 		"refiller",
 		"RSSI",
+		"setserver",
 		"sfnt",
 		"snprintf",
-		"ssid"
+		"softap",
+		"ssid",
+		"timepoint",
+		"timepoints"
 	],
 	"files.associations": {
 		"data.json": "jsonc",

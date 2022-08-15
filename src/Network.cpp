@@ -243,7 +243,7 @@ namespace Network {
 					settings->network.ipInfo.netmask.addr |= 1;
 				}
 				LOG_TRACE(
-					Network, "Setting mask as length %u. Resulting addres: %u.%u.%u.%u", 
+					Network, "Setting mask as length %u. Resulting address: %u.%u.%u.%u", 
 					maskLength, ip4_addr_printf_unpack(&settings->network.ipInfo.netmask)
 				);
 			}
@@ -306,7 +306,7 @@ namespace Network {
 		bool fallback = false;
 		WiFi.persistent(false);
 
-		// Try to connect to preconfigured WiFi network
+		// Try to connect to pre-configured WiFi network
 		if (settings->network.usesStation()) {
 			auto conf = loadStationConfig();
 			LOG_DEBUG(Network, "Connecting to SSID: '%.32s', PASSWORD: '%.64s'", conf->ssid, conf->password);

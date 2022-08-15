@@ -26,7 +26,7 @@ constexpr uint16_t timeoutForCloudLogger = 2000; // ms
 #define WIFI_ROUND_RSSI_CHARS 0
 
 ////////////////////////////////////////////////////////////////////////////////
-// Settings structure (persistet in EEPROM)
+// Settings structure (persisted in EEPROM)
 
 /// Day cycle entry at given time point.
 struct DayCycleEntryData {

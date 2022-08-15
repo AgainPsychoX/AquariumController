@@ -143,7 +143,7 @@ void setup() {
 	}
 	lcd.clear();
 
-	// Initialize water termometer
+	// Initialize water thermometer
 	oneWireThermometers.begin();
 	oneWireThermometers.requestTemperatures();
 	float t = oneWireThermometers.getTempCByIndex(0);
@@ -151,7 +151,7 @@ void setup() {
 		waterTemperature = t;
 	}
 
-	// Setup subcontrollers and services
+	// Setup sub-controllers and services
 	Lighting::setup();
 	Heating::setup();
 	Circulator::setup();
@@ -415,7 +415,7 @@ void setup() {
 	webServer.on(F("/mineralsPumps"), MineralsPumps::handleWebEndpoint);
 
 	if constexpr (debugLevel >= LEVEL_DEBUG) {
-		// Hidden API for testing propuses
+		// Hidden API for testing proposes
 		webServer.on(F("/test"), []() {
 			webServer.send(204);
 		});
@@ -536,7 +536,7 @@ void loop() {
 			}
 		}
 
-		// Update themometer read
+		// Update thermometer read
 		{
 			oneWireThermometers.requestTemperatures();
 			float t = oneWireThermometers.getTempCByIndex(0);
@@ -547,7 +547,7 @@ void loop() {
 
 		Heating::update(waterTemperature);
 
-		// Show water termometer or pH level on LCD
+		// Show water thermometer or pH level on LCD
 		lcd.setCursor(20 - 6, 0);
 		if (currentMillis % 32768 >= 16384) {
 			char buf[8];
