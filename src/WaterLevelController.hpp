@@ -12,9 +12,9 @@ namespace WaterLevel {
 	bool backupTankLow = false;
 
 	void update() {
-		refillingRequired = ioExpander.digitalRead(detectorPin) == LOW;
+		refillingRequired = ioExpander.digitalRead(detectorPin) == HIGH;
 		ioExpander.digitalWrite(refillerPin, refillingRequired ? LOW : HIGH);
 
-		backupTankLow = ioExpander.digitalRead(backupTankDetectorPin) == LOW;
+		backupTankLow = ioExpander.digitalRead(backupTankDetectorPin) == HIGH;
 	}
 }

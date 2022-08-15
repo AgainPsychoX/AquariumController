@@ -18,6 +18,7 @@
 		"Pinout",
 		"preparewebarduino",
 		"PROGMEM",
+		"refiller",
 		"RSSI",
 		"sfnt",
 		"snprintf",

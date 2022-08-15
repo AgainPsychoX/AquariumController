@@ -75,8 +75,8 @@ Hardware consists of:
 | 3   | Output  | Water circulator                   | `LOW` when active.      |
 | 4   | Output  | Minerals pump - KH                 | `LOW` when pumping.     |
 | 5   | Output  | Minerals pump - Mg                 | `LOW` when pumping.     |
-| 6   | Input   | Water level detection              | `LOW` if low level.     |
-| 7   | Input   | Backup water tank level detection  | `LOW` if low level.     |
+| 6   | Input   | Water level detection              | `HIGH` if low level.    |
+| 7   | Input   | Backup water tank level detection  | `HIGH` if low level.    |
 
 
 
