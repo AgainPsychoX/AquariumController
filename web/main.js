@@ -31,8 +31,8 @@ function parseBoolean(value, defaultValue) {
 		return value != 0;
 	}
 	switch (value.toLowerCase().trim()) {
-		case "true": case "yes": case "1": return true;
-		case "false": case "no": case "0": return false;
+		case "true": case "yes": case "on": case "1": return true;
+		case "false": case "no": case "off": case "0": return false;
 		default: return defaultValue;
 	}
 }
