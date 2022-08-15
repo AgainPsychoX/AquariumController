@@ -462,12 +462,12 @@ void loop() {
 	UPDATE_EVERY(500) {
 		Lighting::update();
 
-		WaterLevel::update();
-
 		phMeter::update();
 	}
 
 	UPDATE_EVERY(1000) {
+		WaterLevel::update();
+
 		// Show time on LCD
 		{
 			DateTime now = rtc.now();
