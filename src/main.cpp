@@ -53,6 +53,7 @@ ESP8266WebServer webServer(80);
 
 float waterTemperature = 0; // avg of last and current read (simplest noise reduction)
 
+bool blink = true;
 bool showIP = true;
 constexpr unsigned int showIPtimeout = 20000;
 
@@ -466,6 +467,8 @@ void loop() {
 	}
 
 	UPDATE_EVERY(1000) {
+		blink = !blink;
+
 		WaterLevel::update();
 
 		// Show time on LCD
@@ -491,8 +494,6 @@ void loop() {
 		// Show WiFi status
 		{
 			lcd.print(' ');
-			static bool blink;
-			blink = !blink;
 			switch (WiFi.getMode()) {
 				case WIFI_STA: {
 					if (WiFi.status() == WL_CONNECTED) {
@@ -586,14 +587,20 @@ void loop() {
 					default: break;
 				}
 			}
-			else if (WaterLevel::backupTankLow) {
-				lcd.print(F("Niski poziom RO!"));
-			}
-			else if (WaterLevel::refillingRequired) {
-				lcd.print(F("Dolewanie RO... "));
-			}
 			else {
-				lcd.print(F("                "));
+				const bool both = WaterLevel::backupTankLow && WaterLevel::refillingRequired;
+				const bool any  = WaterLevel::backupTankLow || WaterLevel::refillingRequired;
+				if (any) {
+					if ((!both || blink) && WaterLevel::backupTankLow) {
+						lcd.print(F("Niski poziom RO!"));
+					}
+					else if ((!both || !blink) && WaterLevel::refillingRequired) {
+						lcd.print(F("Dolewanie RO... "));
+					}
+				}
+				else {
+					lcd.print(F("                "));
+				}
 			}
 
 			lcd.setCursor(20 - 4, 1);
