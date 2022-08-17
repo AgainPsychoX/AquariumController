@@ -496,6 +496,30 @@ dialog#network-settings label.mask input {
 
 
 
+#charts a {
+	appearance: button;
+	cursor: default;
+
+	color: buttontext;
+	letter-spacing: normal;
+	word-spacing: normal;
+	line-height: normal;
+	text-transform: none;
+	text-indent: 0px;
+	text-shadow: none;
+	display: inline-block;
+	text-align: center;
+	align-items: flex-start;
+	cursor: default;
+	box-sizing: border-box;
+	background-color: buttonface;
+	padding: 2px 6px;
+	border-radius: 2px;
+	border-width: 1px;
+	border-style: groove;
+	border-color: gray;
+}
+
 svg#chart .line {
 	fill: none;
 	stroke-width: 1.5px;
