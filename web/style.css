@@ -275,7 +275,19 @@ dialog.closing {
 	font-size: large;
 }
 
-#status .grid .subgrid.columns-70-30 label {
+#status .subgrid.mpu {
+	min-width: 250px;
+}
+#status .subgrid.temperatures {
+	min-width: 200px;
+}
+#status .subgrid.temperatures label {
+	grid-template-columns: 70% 30%;
+}
+#status .subgrid.water {
+	min-width: 230px;
+}
+#status .subgrid.water label {
 	grid-template-columns: 70% 30%;
 }
 
