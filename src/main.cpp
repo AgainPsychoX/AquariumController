@@ -159,6 +159,7 @@ void setup() {
 	MineralsPumps::setup();
 	CloudLogger::setup();
 	phMeter::setup();
+	WaterLevel::setup();
 
 	// Register server handlers
 	webServer.on(F("/"), []() {
@@ -464,12 +465,12 @@ void loop() {
 		Lighting::update();
 
 		phMeter::update();
+
+		WaterLevel::update();
 	}
 
 	UPDATE_EVERY(1000) {
 		blink = !blink;
-
-		WaterLevel::update();
 
 		// Show time on LCD
 		{
