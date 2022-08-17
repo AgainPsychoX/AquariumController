@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
+const { networkInterfaces } = require('os');
 
 const parseBoolean = (value, defaultValue) => {
 	if (typeof value === 'undefined') {
@@ -215,4 +216,13 @@ app.get('/resetColorsCycle', (req, res) => {
 	res.sendStatus(200);
 });
 
-app.listen(8090);
+const port = 8090;
+
+app.listen(port);
+
+for (const [name, entries] of Object.entries(networkInterfaces())) {
+	for (const addressEntry of entries) {
+		if (addressEntry.family != 'IPv4') continue;
+		console.log(`http://${addressEntry.address}:${port}/ \t(${name})`)
+	}
+}
