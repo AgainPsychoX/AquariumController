@@ -77,7 +77,7 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 
 			// Prepare request body
 			DateTime now = rtc.now();
-			constexpr unsigned int bufferLength = 200;
+			constexpr unsigned int bufferLength = 400;
 			char buffer[bufferLength];
 			int writtenLength = snprintf(
 				buffer, bufferLength,
@@ -85,12 +85,20 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 					"\"rtcTemperature\":%.2f,"
 					"\"waterTemperature\":%.2f,"
 					"\"phLevel\":%.6f,"
+					"\"uptime\":%lu,"
+					"\"heap\":{"
+						"\"free\":%u,"
+						"\"frag\":%u"
+					"},"
 					"\"secret\":\"%s\","
 					"\"timestamp\":\"%04d-%02d-%02dT%02d:%02d:%02d\""
 				"}",
 				entry.rtcTemperature,
 				entry.waterTemperature,
 				entry.phLevel,
+				millis(),
+				ESP.getFreeHeap(),
+				ESP.getHeapFragmentation(),
 				settings->cloud.secret,
 				// Format should be like: "2004-02-12T15:19:21" (without time zones)
 				now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()
