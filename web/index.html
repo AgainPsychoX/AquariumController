@@ -221,9 +221,15 @@
 				<div class="header-with-aside">
 					<h2>Wykres</h2>
 					<div class="flex-center small spaced">
-						<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 60 * 60 * 1000), new Date())">Pokaż ostatnią godzinę</a>
-						<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 24 * 60 * 60 * 1000), new Date())">Pokaż ostatnią dobę</a>
-						<a href="wykres.html">Otwórz na pełnej stronie</a>
+						<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 60 * 60 * 1000), new Date())">
+							<button>Pokaż ostatnią godzinę</button>
+						</a>
+						<a href="#chart" onclick="focusChartSelectionOn(new Date(new Date().getTime() - 24 * 60 * 60 * 1000), new Date())">
+							<button>Pokaż ostatnią dobę</button>
+						</a>
+						<a href="wykres.html">
+							<button>Otwórz na pełnej stronie</button>
+						</a>
 					</div>
 				</div>
 				<svg id="chart" width="100%" height="500"></svg>
