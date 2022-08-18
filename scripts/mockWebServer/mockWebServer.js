@@ -42,7 +42,7 @@ const config = {
 	mineralsPumps: {
 		ca: {time: 9 * 60 + 20, mL: 20},
 		mg: {time: 9 * 60 + 25, mL: 25},
-		kh: {time: 9 * 60 + 30, mL: 30},
+		kh: {time: 9 * 60 + 5, mL: 10},
 	},
 	phMeter: {
 		points: [
@@ -138,8 +138,8 @@ app.get('/status', (req, res) => {
 			blue: Math.round(blue),
 			white: Math.round(white),
 			heatingStatus,
-			isRefilling: false,
-			isRefillTankLow: false,
+			isRefilling: true,
+			isRefillTankLow: true,
 			timestamp: new Date().toJSON(),
 			rssi: Math.round(-80 + noise(Date.now() * 0.02 * speed) / 3 * 30),
 		});

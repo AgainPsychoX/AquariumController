@@ -764,7 +764,7 @@ fetch(`${baseHost}/config`)
 			const minutes = state['mineralsPumps'][key]['time'];
 			const timeInput   = fragment.querySelector('input[type=time]');
 			const numberInput = fragment.querySelector('input[type=number]');
-			timeInput.value = [`${Math.floor(minutes / 60)}`, `${minutes % 60}:00`].map(p => p.padStart(2, '0')).join(':');
+			timeInput.value = [Math.floor(minutes / 60), minutes % 60].map(p => `${p}`.padStart(2, '0')).join(':') + ':00';
 			numberInput.value = state['mineralsPumps'][key]['mL'];
 			[timeInput, numberInput].forEach(input => input.addEventListener('change', () => {
 				debouncedSaveMineralsPumpsSettings();
