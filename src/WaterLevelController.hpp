@@ -29,6 +29,10 @@ namespace WaterLevel {
 			lastReadings = this->isSatisfiedNow() ? 0xFFFFFFFF : 0;
 		}
 
+		inline bool wasSatisfiedNow() const {
+			return lastReadings & 1;
+		}
+
 		/**
 		 * Reads the input port and returns true whenever detector is satisfied (high level of water).
 		 * Doesn't register the reading in last readings.
