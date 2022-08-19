@@ -21,8 +21,8 @@ namespace {
 }
 
 namespace WaterLevel {
-	template <uint8_t pin, uint8_t satisfiedValue = LOW>
-	struct Detector {
+	template <uint8_t pin, uint8_t satisfiedValue = LOW, bool readCached = true>
+	struct DetectorViaIOExpander {
 		uint32_t lastReadings;
 
 		inline void setup() {
@@ -38,7 +38,11 @@ namespace WaterLevel {
 		 * Doesn't register the reading in last readings.
 		 */
 		inline bool isSatisfiedNow() const {
-			return ioExpander.digitalRead(pin) == satisfiedValue;
+			const auto currentValue = readCached
+				? ioExpander.digitalReadCached(pin)
+				: ioExpander.digitalRead(pin)
+			;
+			return currentValue == satisfiedValue;
 		}
 
 		/**
@@ -58,8 +62,8 @@ namespace WaterLevel {
 	};
 
 	// Pins (on the IO extender)
-	extern Detector<7> mainTankDetector;
-	extern Detector<6> backupTankDetector;
+	extern DetectorViaIOExpander<7> mainTankDetector;
+	extern DetectorViaIOExpander<6> backupTankDetector;
 	constexpr byte refillerPin = 1;
 
 	extern bool refillingRequired;

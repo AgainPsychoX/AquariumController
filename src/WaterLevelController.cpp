@@ -2,8 +2,8 @@
 #include "WaterLevelController.hpp"
 
 namespace WaterLevel {
-	Detector<7> mainTankDetector;
-	Detector<6> backupTankDetector;
+	DetectorViaIOExpander<7> mainTankDetector;
+	DetectorViaIOExpander<6> backupTankDetector;
 
 	bool refillingRequired = false;
 	bool backupTankLow = false;
@@ -20,6 +20,7 @@ namespace WaterLevel {
 	}
 
 	void update() {
+		ioExpander.read(); // one read, as detector uses cache
 		mainTankDetector.checkIsSatisfiedNow();
 		backupTankDetector.checkIsSatisfiedNow();
 		
