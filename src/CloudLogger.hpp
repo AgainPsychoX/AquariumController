@@ -96,7 +96,7 @@ d0lIKO2d1xozclOzgjXPYovJJIultzkMu34qQb9Sz/yilrbCgj8=
 				entry.rtcTemperature,
 				entry.waterTemperature,
 				entry.phLevel,
-				millis(),
+				millis(), // will roll-over to 0 after 40+ days, but it's good enough.
 				ESP.getFreeHeap(),
 				ESP.getHeapFragmentation(),
 				settings->cloud.secret,

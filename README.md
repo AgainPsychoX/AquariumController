@@ -377,7 +377,47 @@ There is HTTPS client running every configured interval sending the request with
 ## TODO
 
 + Fix water level refilling ~~crash~~ resets time!
+	+ Most likely it's fixing hardware issue (electromagnetic interference) with software, but fuck it :P
+	+ Hardware fixing will be attempted too I hope [:COPIUM:](https://gumlet.assettype.com/afkgaming%2F2021-08%2F79649079-d0e7-4acd-853b-6a2b92797da3%2Fcopium_png.png?auto=format%2Ccompress&dpr=1.0&w=400)
+	+ Current fix with delays before/after pump I/O switching isn't full solution, just slicing the chance down.
+	+ Try save time before running pump and then update it after (with added offset) if the time was reset.
+	+ Use NTP simple client to sync time if anything happens.
+	+ Try keep track of time even without the DS3221 (which gets corrupted in this scenario)?
+	+ Could include milliseconds that way, would prove useful for smoother LED transitions.
+	+ Maybe would be even a bit faster, no holding the I2C I/O for every time read.
+	+ Might want to rewrite DS3221 library to do all this cleanly.
++ Include more stuff on the cloud log
+	+ ~~Uptime~~ (done, but would roll over at )
+	+ ~~Memory usage, free heap, heap fragmentation~~
+	+ Water refill pump
+	+ Minerals pumps
+	+ Heating/cooling
+	+ Circulation (?)
+	+ Separate pushes?
+	+ Keeping track of last start timers?
++ Cloud logger buffer (configurable; in such case charts could get data from status too?).
++ Charts/cloud need major rewrite
+	+ Avoid fetching all data at once, browsers can't handle too much points.
+	+ Calendar
+		+ Allow to select dates range to show on slider.
+		+ Singular request (singular table with newest row being updated)
+		+ Show summary stats (min/max/avg for water temperature and pH, etc)
+	+ Slider 
+		+ Allow to move detailed view across dates selected in calendar.
+		+ Use points from averaged data to create mini-graph preview to slide on.
+	+ Detailed view (with all points, fetching on demand)
+	+ Make the view usable on mobile
+		+ Rotate!
+	+ Option to auto-scale to represent the data in detailed view with more accuracy.
+	+ Show/hide system package temperature, to keep it away from messing with auto-scaling on temperatures scale.
+	+ (OLD) Chart link/button for last hour/day should show error if no data to show.
+	+ (OLD) Add loading/error information for line charts.
+	+ Include cloud endpoint code (Google App Scripts) here.
++ Use UDP for cloud logging? Trying to cut down time required to upload.
 + Try logging crashes to cloud?
++ Split README into pieces, use `docs/` folder, keep README for nice project summary.
+	+ Maybe try to create electronics schematic? A bit backlogging, hard to do now when it's alive.
++ Store cloud logger settings in EEPROM (incl. URL and secret) (already in EEPROM structure, but unused).
 + WiFi settings graying out if DHCP is used and show mask as IP.
 + Make `/config` endpoint use proper GET/POST to avoid lag of printing so much when only setting.
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
@@ -389,9 +429,6 @@ There is HTTPS client running every configured interval sending the request with
 + Add circulator night mode, with settable hour:minute (already in EEPROM structure, but unused).
 + Add feeding mode - circulator disable (and maybe special lighting?)
 + Try soft-PWM on io expander (rapid switching? https://www.youtube.com/watch?v=Fsb7kxDxYGw http://sim.okawa-denshi.jp/en/PWMtool.php).
-+ Add security token to cloud communication.
-+ Store cloud logger settings in EEPROM (incl. URL and secret) (already in EEPROM structure, but unused).
-+ Include cloud endpoint code (Google App Scripts) here.
 + Circulator force run button.
 + Extend RTC with milliseconds (sync on start and use `millis`); Use extended RTC for smoother LEDs transitions.
 + Add fancy animations on demand for LEDs.
@@ -404,9 +441,6 @@ There is HTTPS client running every configured interval sending the request with
 + Reuse light cycle 2 bytes instead of hour/minute start/stop bytes for things like pumps or circulator.
 + Add polynomial/Newton interpolation for calculating ph level.
 + Temperature compensation for ph calculation.
-+ Chart link/button for last hour/day should show error if no data to show.
-+ Add loading/error information for line charts.
-+ Cloud logger buffer (configurable; in such case charts could get data from status too?).
 + Don't remove unchanged files at `prepareWebArduino` (support directory tree).
 + Add `--watch` to `prepareWebArduino`.
 + Exportable/importable colour cycle configuration (as JSON/encoded?) .
