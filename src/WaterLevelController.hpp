@@ -53,7 +53,7 @@ namespace WaterLevel {
 		}
 
 		inline bool isContinuouslyDissatisfied() const {
-			return countLSBsClear(lastReadings) >= 5;
+			return countLSBsClear(lastReadings) >= 3;
 		}
 	};
 

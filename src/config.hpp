@@ -14,7 +14,7 @@ USE_LOG_LEVEL(Lighting,         LEVEL_INFO);
 USE_LOG_LEVEL(MineralsPumps,    LEVEL_INFO);
 USE_LOG_LEVEL(CloudLogger,      LEVEL_INFO);
 USE_LOG_LEVEL(Circulator,       LEVEL_INFO);
-USE_LOG_LEVEL(WaterLevel,       LEVEL_TRACE);
+USE_LOG_LEVEL(WaterLevel,       LEVEL_INFO);
 USE_LOG_LEVEL(Heating,          LEVEL_INFO);
 USE_LOG_LEVEL(phMeter,          LEVEL_INFO);
 
