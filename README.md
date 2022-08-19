@@ -382,10 +382,13 @@ There is HTTPS client running every configured interval sending the request with
 	+ Current fix with delays before/after pump I/O switching isn't full solution, just slicing the chance down.
 	+ Try save time before running pump and then update it after (with added offset) if the time was reset.
 	+ Use NTP simple client to sync time if anything happens.
-	+ Try keep track of time even without the DS3221 (which gets corrupted in this scenario)?
-	+ Could include milliseconds that way, would prove useful for smoother LED transitions.
-	+ Maybe would be even a bit faster, no holding the I2C I/O for every time read.
-	+ Might want to rewrite DS3221 library to do all this cleanly.
+	+ Try keep track of time even without the DS3221 (which gets corrupted in this scenario)
+		+ Could include milliseconds that way, would prove useful for smoother LED transitions.
+		+ Maybe would be even a bit faster, no holding the I2C I/O for every time read.
+		+ Might want to rewrite DS3221 library to do all this cleanly.
+		+ Can't really work after restarting offline without it.
+		+ Allow to start without it if there is internet access.
+		+ Option to allow to start without time at all, a bit unsafe, but better than nothing in edge scenario.
 + Include more stuff on the cloud log
 	+ ~~Uptime~~ (done, but would roll over at )
 	+ ~~Memory usage, free heap, heap fragmentation~~
