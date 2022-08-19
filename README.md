@@ -376,6 +376,8 @@ There is HTTPS client running every configured interval sending the request with
 
 ## TODO
 
++ Fix water level refilling ~~crash~~ resets time!
++ Try logging crashes to cloud?
 + WiFi settings graying out if DHCP is used and show mask as IP.
 + Make `/config` endpoint use proper GET/POST to avoid lag of printing so much when only setting.
 + Make `/colorsCycle` endpoint instead separate `set/get`. RESTful somewhat, GET/POST.
