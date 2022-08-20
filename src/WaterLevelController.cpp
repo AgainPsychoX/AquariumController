@@ -9,9 +9,7 @@ namespace WaterLevel {
 	bool backupTankLow = false;
 
 	void doRefilling(bool state) {
-		delayMicroseconds(100);
 		ioExpander.digitalWrite(refillerPin, state ? LOW : HIGH);
-		delayMicroseconds(100);
 	}
 
 	void setup() {
