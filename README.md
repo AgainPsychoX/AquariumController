@@ -368,7 +368,7 @@ Size: `0x1000` (4kB), used `0x200` (512b).
 
 #### Cloud logger
 
-There is HTTPS client running every configured interval sending the request with readings sample to endpoint. As the endpoint, [Google Apps Script with `POST` handler](https://script.google.com/d/1MDprbKPWUi1Kno0x6o2YVEOm3dEMGe_TI3PfwGwiD1rW21l4PcxbYVoA/edit?usp=sharing) is used. Data is stored into [Google Spreadsheet document](https://docs.google.com/spreadsheets/d/1OeXW_dhXnBcgqe8lflZT3rbdBoCy9qz3bURGQ95YH9o/edit?usp=sharing#gid=581325308). 
+There is HTTPS client running every configured interval sending the request with readings sample to endpoint. As the endpoint, [Google Apps Script with `POST` handler](https://script.google.com/d/1MDprbKPWUi1Kno0x6o2YVEOm3dEMGe_TI3PfwGwiD1rW21l4PcxbYVoA/edit?usp=sharing) is used. On this repository it's code should be stored in `cloud/` folder. Data is stored into [Google Spreadsheet document](https://docs.google.com/spreadsheets/d/1OeXW_dhXnBcgqe8lflZT3rbdBoCy9qz3bURGQ95YH9o/edit?usp=sharing#gid=581325308). 
 
 
 
@@ -389,6 +389,8 @@ There is HTTPS client running every configured interval sending the request with
 		+ Can't really work after restarting offline without it.
 		+ Allow to start without it if there is internet access.
 		+ Option to allow to start without time at all, a bit unsafe, but better than nothing in edge scenario.
++ Rewrite water refilling code, why have I used shifting registers instead counting again?
++ Prevent pump running endlessly when no water in either of tanks.
 + Include more stuff on the cloud log
 	+ ~~Uptime~~ (done, but would roll over at )
 	+ ~~Memory usage, free heap, heap fragmentation~~
@@ -404,11 +406,17 @@ There is HTTPS client running every configured interval sending the request with
 	+ Calendar
 		+ Allow to select dates range to show on slider.
 		+ Singular request (singular table with newest row being updated)
-		+ Show summary stats (min/max/avg for water temperature and pH, etc)
+		+ Show summary stats (min/max/avg for water temperature and pH, etc) per day.
 	+ Slider 
 		+ Allow to move detailed view across dates selected in calendar.
 		+ Use points from averaged data to create mini-graph preview to slide on.
+		+ Allow move the slider view/window by buttons on left and right.
 	+ Detailed view (with all points, fetching on demand)
+	+ Cloud storage notes:
+		+ Google Sheets/Scripts as cloud :P
+		+ Each month in separate table/sheet.
+		+ Each month has per day summary (30+ records), her hour summary (720+ records) and lastly, the raw data.
+		+ Assuming 30 second interval for reports, 100 MB should be enough for a month.
 	+ Make the view usable on mobile
 		+ Rotate!
 	+ Option to auto-scale to represent the data in detailed view with more accuracy.
