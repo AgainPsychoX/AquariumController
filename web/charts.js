@@ -242,11 +242,11 @@
 		return new Date(Math.round((((xlSerial - 25569) * 24 * 60) + new Date().getTimezoneOffset()) * 60 * 1000))
 	};
 	let updating = false;
-	const samples = [];
+	let samples = [];
+	let lastRow = 1; // start at header
 	const updateChart = async () => {
 		if (updating) return;
 		try {
-			const lastRow = samples.length + 1;
 			const feedURL = `https://content-sheets.googleapis.com/v4/spreadsheets/1OeXW_dhXnBcgqe8lflZT3rbdBoCy9qz3bURGQ95YH9o/values/RawData!A${lastRow + 1}:E?valueRenderOption=UNFORMATTED_VALUE&key=AIzaSyCcI8elBAOvt-clz54qC5_lGTa9NyXPyFQ`;
 			const data = await fetch(feedURL)
 				.then(async (response) => {
@@ -263,6 +263,7 @@
 					return response.json();
 				})
 			;
+			lastRow += data.values.length;
 
 			if (!data.values || data.values.length == 0) {
 				console.warn("No any new records, logging is disabled, controller is offline or something went wrong...");
@@ -275,6 +276,10 @@
 					water: parseFloat(sample[3]),
 					ph: parseFloat(sample[4]),
 				});
+			});
+			const now = new Date();
+			samples = samples.filter((sample) => {
+				return (now - sample.time) < (1000 * 60 * 60 * 24 * 8);
 			});
 
 			main.xScale.time.domain(d3.extent(samples, (sample) => sample.time));
