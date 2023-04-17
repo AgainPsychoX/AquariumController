@@ -1,0 +1,9 @@
+{
+	"dependencies": {
+		"@types/google-apps-script": "^1.0.59"
+	},
+	"scripts": {
+		"push": "clasp push",
+		"deploy": "clasp push && clasp deploy -i AKfycbzNjb9VDXi9RayxOderzEnBSd-2OY8O6I-WqUD0YJTDE5wRQWC0"
+	}
+}
