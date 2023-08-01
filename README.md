@@ -1,6 +1,8 @@
 
 # Aquarium controller
 
+Aquarium controller using ESP8266 platform, created for my dad, Featuring 2x20 LCD, web portal over Wi-Fi, lights controls with day schedule and smooth transitions, water conditioning, refilling and circulation, micro-elements dosing (pumps), temperature and pH sensors with calibration and cloud logging.
+
 ##### Features
 
 + Summarized status display on 2x20 LED.
@@ -14,6 +16,30 @@
 + Cloud logging of various parameters.
 + Most of UI uses Polish language.
 
+###### Few photos
+
+<table>
+	<tbody>
+		<tr>
+			<td rowspan=2 colspan=2>
+				<small>
+					Few photos of the aquarium, the setup and the controller. Web&nbsp;application <a href="#web-content">screenshot</a> is also included, more further below.
+				</small>
+				<img src="https://i.imgur.com/pouMrz6.jpg"/>
+			</td>
+			<td colspan=2><img src="https://i.imgur.com/mV9msUV.jpg"/></td>
+		</tr>
+		<tr>
+			<td colspan=2><img src="https://i.imgur.com/wcgDvje.jpg"/></td>
+		</tr>
+		<tr>
+			<td><img src="https://i.imgur.com/b46cRTc.jpg"/></td>
+			<td><img src="https://i.imgur.com/FTw9NOl.jpg"/></td>
+			<td><img src="https://i.imgur.com/tjHVSEb.jpg"/></td>
+			<td><img src="https://i.imgur.com/iUysdes.jpg"/></td>
+		</tr>
+	</tbody>
+</table>
 
 
 
