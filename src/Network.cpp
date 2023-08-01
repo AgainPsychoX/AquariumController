@@ -90,7 +90,7 @@ namespace Network {
 		}
 		{
 			struct softap_config conf = {
-				.ssid_len = sizeof(DEFAULT_SSID),
+				.ssid_len = sizeof(DEFAULT_SSID) - 1,
 				.channel = 1,
 				.authmode = sizeof(DEFAULT_PASSWORD) > 1 ? AUTH_WPA_WPA2_PSK : AUTH_OPEN,
 				.ssid_hidden = 0,

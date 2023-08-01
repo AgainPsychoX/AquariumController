@@ -542,7 +542,7 @@ void loop() {
 		{
 			oneWireThermometers.requestTemperatures();
 			float t = oneWireThermometers.getTempCByIndex(0);
-			if (t != DEVICE_DISCONNECTED_C){
+			if (t != DEVICE_DISCONNECTED_C) {
 				waterTemperature = (waterTemperature + t) / 2;
 			}
 		}

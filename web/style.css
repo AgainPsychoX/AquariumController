@@ -333,6 +333,7 @@ output[name=waterLevel].active {
 	background: #d3d3d3;
 	outline: none;
 	-webkit-appearance: none;
+	appearance: none;
 	opacity: 0.8;
 	transition: opacity .2s;
 }

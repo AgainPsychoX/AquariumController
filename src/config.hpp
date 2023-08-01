@@ -157,7 +157,7 @@ struct Settings {
 	////////////////////////////////////////
 	// 0x100 - 0x160: Some network and cloud settings.
 
-	// Some network settings are persistet by internal SDK.
+	// Some network settings are persisted by internal SDK.
 	struct Network {
 		enum Mode : uint8_t {
 			DISABLED = 0b00,
